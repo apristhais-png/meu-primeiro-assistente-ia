@@ -31,6 +31,10 @@
 >   - o fallback só acontece em falhas **temporárias**. Erros de chave, permissão ou cobrança **param** o fallback, para o problema não ficar escondido (RF6);
 >   - o fallback passou do P8 para o P6, dentro do `provedores.py`; o P8 continua juntando limites, histórico e fallback no `chat.py`;
 >   - a temperatura não é enviada à Anthropic, porque os modelos atuais do Claude recusam esse parâmetro.
+> - **Revisão 6 (durante o P7):**
+>   - exemplos de IP do T4 trocados por IPs públicos reais (os antigos eram de faixas de documentação);
+>   - regra para linhas repetidas do `X-Forwarded-For`;
+>   - `httpx2` (usado pelos testes) e `tzdata` (fuso de Brasília) declarados nas dependências.
 
 ---
 
@@ -441,9 +445,11 @@ Regras:
 - Com `identificar_por_ip: false`, os limites por pessoa são ignorados, mas os globais **continuam bloqueando**.
 
 **Identificação segura (com `identificar_por_ip: true`):**
-- `X-Forwarded-For: 198.51.100.10` → a pessoa é identificada por esse IP.
-- `X-Forwarded-For: 203.0.113.7, 198.51.100.10` → usa **198.51.100.10** (o último), **nunca** o primeiro.
-- **IP inventado não engana:** a mesma pessoa (último item `198.51.100.10`) enviando vários valores falsos diferentes no começo da lista recebe **sempre o mesmo** identificador e continua bloqueada ao passar do limite.
+*Os testes usam IPs públicos de verdade (ex.: `8.8.8.8`, `1.1.1.1`). IPs como `203.0.113.7` e `198.51.100.10` são de faixas reservadas para documentação: não existem na internet real e por isso são tratados como não confiáveis.*
+- `X-Forwarded-For: 8.8.8.8` → a pessoa é identificada por esse IP.
+- `X-Forwarded-For: 203.0.113.7, 8.8.8.8` → usa **8.8.8.8** (o último), **nunca** o primeiro.
+- **IP inventado não engana:** a mesma pessoa (último item `8.8.8.8`) enviando vários valores falsos diferentes no começo da lista recebe **sempre o mesmo** identificador e continua bloqueada ao passar do limite.
+- **Linhas repetidas:** se o pedido tiver duas linhas `X-Forwarded-For` (uma inventada e outra do proxy), as duas são juntadas na ordem de chegada, e vale o último item.
 - Sem `X-Forwarded-For`, com valor vazio, com `abc` no último item, ou com IP privado/local (`10.0.0.1`, `192.168.0.5`, `127.0.0.1`) → "não identificada". Só os limites globais valem, e o app não dá erro.
 - O IP da conexão do proxy **nunca** é usado como identificação.
 - IPv6 válido e público também é aceito.
