@@ -36,6 +36,7 @@
 >   - regra para linhas repetidas do `X-Forwarded-For`;
 >   - `httpx2` (usado pelos testes) e `tzdata` (fuso de Brasília) declarados nas dependências.
 > - **Revisão 7 (durante o P8):** regras de segurança para o histórico que vem do navegador (papel `system` descartado, tamanho máximo por mensagem, avisos do assistente removidos).
+> - **Revisão 8 (durante o P9):** detalhes da tela: balão da pessoa e links nas cores do `config.yml`, balão da IA com o fundo validado, modo claro/escuro forçado, API `/chat` com os mesmos limites da tela.
 
 ---
 
@@ -480,6 +481,12 @@ Regras:
 - A interface do Gradio é criada sem erro usando o `config.yml` real.
 - O título da tela é o `nome` da configuração.
 - As cores do `config.yml` e a cor de texto escolhida para os botões aparecem no estilo aplicado.
+- O balão das mensagens da pessoa usa um tom claro da `cor_primaria`; os links nas mensagens usam a `cor_secundaria`, sobre o mesmo fundo em que o contraste foi validado.
+- O modo claro ou escuro do `config.yml` é forçado, mesmo que o navegador prefira o outro.
+- Logo, descrição, boas-vindas e exemplos vêm do `config.yml`; textos do config não viram código na página.
+- Os exemplos não são pré-calculados (abrir o app não chama a IA) e a conversa não é salva no navegador.
+- Erro inesperado vira mensagem amigável, sem detalhes técnicos na tela nem nos logs.
+- **App de verdade, aberto em 127.0.0.1 com IA falsa e rede externa bloqueada:** a página abre com o nome e as cores; cada visitante tem a própria conversa; os limites global e por pessoa são aplicados no servidor (inclusive pela API `/chat`); pergunta longa e falta de chaves mostram as mensagens amigáveis.
 
 ### T7 — `tests/test_versoes.py` — versão do Gradio
 - O `requirements.txt` fixa o Gradio com `==`, **uma única vez**.
