@@ -12,7 +12,7 @@
 >
 > **Histórico de revisões:**
 > - **Revisão 2:** limites de uso, verificação de chaves mais precisa, versão do Gradio fixada, exclusão de arquivos antigos na publicação, cores personalizadas.
-> - **Revisão 3 (esta):**
+> - **Revisão 3:**
 >   - limites aplicados **no servidor**;
 >   - verificação de chaves passa a olhar **todos** os arquivos, inclusive a documentação, sem falso alarme;
 >   - versão do Gradio conferida em **todos** os arquivos;
@@ -37,6 +37,7 @@
 >   - `httpx2` (usado pelos testes) e `tzdata` (fuso de Brasília) declarados nas dependências.
 > - **Revisão 7 (durante o P8):** regras de segurança para o histórico que vem do navegador (papel `system` descartado, tamanho máximo por mensagem, avisos do assistente removidos).
 > - **Revisão 8 (durante o P9):** detalhes da tela: balão da pessoa e links nas cores do `config.yml`, balão da IA com o fundo validado, modo claro/escuro forçado, API `/chat` com os mesmos limites da tela.
+> - **Revisão 9 (durante o P10):** o teste T7 também confere o cabeçalho do README (topo, `app_file`, Python 3.11 entre aspas, regras do Hugging Face) e que todas as bibliotecas têm versão fixada.
 
 ---
 
@@ -493,6 +494,9 @@ Regras:
 - O `sdk_version` do cabeçalho do `README.md` é **igual** a essa versão.
 - Nenhum outro arquivo do projeto fixa uma versão diferente do Gradio, e o `requirements-dev.txt` não lista o Gradio.
 - No GitHub Actions, a versão **instalada** do Gradio também é igual. Isso confirma que o que foi testado é o que será publicado.
+- O cabeçalho do `README.md` está no **topo** do arquivo, é um YAML válido e tem `sdk: gradio`, `app_file: app.py` (que existe) e `python_version: "3.11"` (entre aspas). `colorFrom`/`colorTo` usam cores aceitas pelo Hugging Face e `short_description` tem até 60 caracteres.
+- Todas as bibliotecas dos `requirements*.txt` têm versão fixada com `==`.
+- Quando o workflow do GitHub Actions existir (P12), a `python-version` dele é a mesma do README.
 
 ### T8 — `tests/test_segredos.py` + `scripts/verificar_segredos.py` — chaves vazadas
 Como a verificação funciona:
