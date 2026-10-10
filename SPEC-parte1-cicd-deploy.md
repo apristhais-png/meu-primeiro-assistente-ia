@@ -39,6 +39,7 @@
 > - **Revisão 8 (durante o P9):** detalhes da tela: balão da pessoa e links nas cores do `config.yml`, balão da IA com o fundo validado, modo claro/escuro forçado, API `/chat` com os mesmos limites da tela.
 > - **Revisão 9 (durante o P10):** o teste T7 também confere o cabeçalho do README (topo, `app_file`, Python 3.11 entre aspas, regras do Hugging Face) e que todas as bibliotecas têm versão fixada.
 > - **Revisão 10 (durante o P11):** `scripts/publicar.py` só simula sem `--publicar`, envia só arquivos do Git na lista permitida, cancela tudo diante de arquivo perigoso, chave, config inválido, falta de essencial ou exclusão em massa, e publica numa única atualização presa à versão lida do Space. `huggingface_hub` declarado no `requirements-dev.txt`.
+> - **Revisão 11 (durante o P12):** o workflow roda em todo Pull Request e em push na `main` (pushes num PR já disparam pelo próprio PR, sem rodar duas vezes). Novo `tests/test_workflow.py` confere gatilhos, Python 3.11, todas as verificações, nenhuma falha escondida e nenhum segredo ou publicação no job "testar".
 
 ---
 
@@ -134,7 +135,8 @@ meu-primeiro-assistente-ia/
 │   ├── test_interface.py       # Tela
 │   ├── test_versoes.py         # Versão do Gradio igual em todos os arquivos
 │   ├── test_segredos.py        # Verificação de chaves
-│   └── test_publicar.py        # Regras de publicação (o que envia, o que apaga, o que protege)
+│   ├── test_publicar.py        # Regras de publicação (o que envia, o que apaga, o que protege)
+│   └── test_workflow.py        # O workflow: gatilhos, verificações, sem segredos no job testar
 ├── .github/
 │   └── workflows/
 │       └── ci-deploy.yml       # Robô: testa e depois publica no Hugging Face
@@ -554,7 +556,7 @@ Você faz push no GitHub
         │
         ▼
 ┌──────────────────────────────────┐
-│ Job 1: "testar"                  │  roda em TODO push e Pull Request
+│ Job 1: "testar"                  │  roda em todo Pull Request (e cada push nele) e em todo push na main
 │  1. Baixa o código               │
 │  2. Instala Python 3.11          │
 │  3. Instala as bibliotecas       │
