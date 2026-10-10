@@ -1,0 +1,11 @@
+# Bibliotecas usadas SÓ para testar o projeto (não vão para o Hugging Face).
+# Instale junto com as do app:
+#   pip install -r requirements.txt -r requirements-dev.txt
+#
+# O Gradio NÃO fica aqui: a versão dele é definida só no requirements.txt.
+
+# Roda os testes automáticos
+pytest==9.1.1
+
+# Verifica o estilo e erros comuns no código
+ruff==0.17.0
