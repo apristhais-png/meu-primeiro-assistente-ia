@@ -1,6 +1,6 @@
 # SPEC — Parte 1: Assistente de IA com CI/CD e publicação
 
-> **Status:** aguardando aprovação final. Nenhum código será escrito antes da sua autorização.
+> **Status:** aprovada como referência. Implementação em andamento, um passo por vez, com autorização a cada passo.
 >
 > **Baseado em:** `IDEIA-parte1.md`
 >
@@ -27,6 +27,10 @@
 >   - logo criada no P4;
 >   - CA16 com um arquivo de teste;
 >   - novos critérios para memória, instruções e pergunta longa (CA21 a CA23) e teste de que as conversas não vão para os logs.
+> - **Revisão 5 (durante o P6):**
+>   - o fallback só acontece em falhas **temporárias**. Erros de chave, permissão ou cobrança **param** o fallback, para o problema não ficar escondido (RF6);
+>   - o fallback passou do P8 para o P6, dentro do `provedores.py`; o P8 continua juntando limites, histórico e fallback no `chat.py`;
+>   - a temperatura não é enviada à Anthropic, porque os modelos atuais do Claude recusam esse parâmetro.
 
 ---
 
@@ -105,9 +109,9 @@ meu-primeiro-assistente-ia/
 │   ├── __init__.py
 │   ├── config.py               # Lê e valida o config.yml
 │   ├── cores.py                # Calcula contraste e escolhe a cor do texto dos botões
-│   ├── provedores.py           # Fala com OpenRouter, Anthropic e OpenAI
+│   ├── provedores.py           # Fala com OpenRouter, Anthropic e OpenAI + fallback entre eles
 │   ├── limites.py              # Limites de uso no servidor + identificação segura pelo IP
-│   ├── chat.py                 # Junta tudo: limites → conversa → fallback entre provedores
+│   ├── chat.py                 # Junta tudo: limites → histórico → fallback (de provedores.py)
 │   └── interface.py            # Monta a tela do Gradio usando a configuração
 ├── scripts/
 │   ├── validar_config.py       # Confere o config.yml antes de publicar
@@ -116,9 +120,9 @@ meu-primeiro-assistente-ia/
 ├── tests/
 │   ├── test_config.py          # Configuração
 │   ├── test_cores.py           # Contraste e legibilidade
-│   ├── test_provedores.py      # Provedores (com simulação)
+│   ├── test_provedores.py      # Provedores e fallback (com simulação)
 │   ├── test_limites.py         # Limites de uso
-│   ├── test_chat.py            # Conversa e fallback
+│   ├── test_chat.py            # Conversa: limites, histórico e logs
 │   ├── test_interface.py       # Tela
 │   ├── test_versoes.py         # Versão do Gradio igual em todos os arquivos
 │   ├── test_segredos.py        # Verificação de chaves
@@ -360,7 +364,7 @@ Regras:
 | RF3 | **Instruções do assistente** | O texto de `instrucoes` é enviado em toda conversa para definir o jeito de responder. |
 | RF4 | **Personalização visual** | Nome, descrição, logo, cores, tema, mensagem de boas-vindas e perguntas de exemplo vêm do `config.yml`. |
 | RF5 | **Escolha de provedor por ordem** | Usa o primeiro provedor ativo e com chave configurada. |
-| RF6 | **Fallback automático** | Se o provedor falhar (fora do ar, sem crédito, tempo esgotado, chave inválida), tenta o próximo da lista. |
+| RF6 | **Fallback automático só em falhas temporárias** | Se o provedor tiver uma falha **temporária** (tempo esgotado, falha de conexão, excesso de pedidos 429, erro no servidor 5xx ou resposta vazia), tenta o próximo da lista. Se o erro for de **chave** (401), **permissão** (403), **cobrança/sem créditos** (402, ou 429/400 que indiquem falta de créditos) ou **pedido inválido** (ex.: modelo inexistente), o fallback **para**: os outros provedores não são tentados, a pessoa vê a mensagem amigável (RF7) e o log explica o que corrigir. Provedor **sem chave configurada** é pulado sem ser chamado. |
 | RF7 | **Mensagem amigável quando tudo falha** | Se nenhum provedor responder, mostra: *"Desculpe, não consegui responder agora. Tente novamente em alguns minutos."* Sem erros técnicos. |
 | RF8 | **Validação da configuração** | Ao iniciar, o app confere o `config.yml`. Se houver erro, mostra claramente qual campo está errado e como corrigir. |
 | RF9 | **Script de validação** | `python scripts/validar_config.py` confere o arquivo antes de publicar (usado também pelo GitHub Actions). |
@@ -404,11 +408,28 @@ Regras:
 - `cor_primaria` quase igual ao fundo (contraste < 3 : 1) é **recusada**.
 - As cores do `config.yml` real passam em todas as regras.
 
-### T3 — `tests/test_provedores.py` — provedores
-- Cada provedor monta a requisição com o modelo, a temperatura, o `max_tokens` e as instruções certas.
+### T3 — `tests/test_provedores.py` — provedores e fallback
+*A rede fica bloqueada durante esses testes: nenhuma IA de verdade é chamada.*
+
+**Provedores:**
+- Cada provedor monta a requisição com o modelo, o `max_tokens` e as instruções certas. OpenRouter e OpenAI também recebem a temperatura; a Anthropic **não** (os modelos atuais do Claude recusam esse parâmetro). A OpenAI usa `max_completion_tokens`.
 - O OpenRouter usa o endereço correto (`https://openrouter.ai/api/v1`).
-- Um provedor sem chave é marcado como "indisponível".
-- A chave nunca aparece em mensagens de erro.
+- Os clientes não repetem pedidos sozinhos (`max_retries=0`): quem decide é o fallback.
+- Um provedor sem chave (ou com só espaços) é marcado como "indisponível"; espaços em volta da chave são removidos.
+- A chave nunca aparece em mensagens de erro, nem no `repr` do provedor, nem anexada ao erro original.
+
+**Classificação dos erros:**
+- **Temporários (permitem fallback):** tempo esgotado, conexão, 408, 429 de excesso de pedidos, 500, 502, 503, 529, resposta vazia.
+- **Não temporários (param o fallback):** 401, 403, 402, 429 com `insufficient_quota`, 400 com "credit balance is too low" ou `billing_error`, 404, 400 e 422 comuns, e erros inesperados.
+
+**Fallback:**
+- Se o 1º provedor responde, o 2º não é chamado.
+- Se o 1º tem falha temporária, o 2º é chamado; se o 1º e o 2º falham temporariamente, o 3º é usado.
+- Se todos falham temporariamente, aparece a mensagem amigável (RF7).
+- Erro de chave, permissão, cobrança ou pedido inválido **para** o fallback: os provedores seguintes **não** são chamados.
+- Falha temporária no 1º e cobrança no 2º: para no 2º, e o 3º não é chamado.
+- Provedor sem chave é pulado sem ser chamado (CA3); sem nenhuma chave, aparece a mensagem amigável (CA4).
+- Os logs mostram quais provedores responderam ou falharam, mas **nunca** a chave, a pergunta, a resposta ou as instruções.
 
 ### T4 — `tests/test_limites.py` — limites e identificação no servidor
 *Os testes simulam pedidos com diferentes `X-Forwarded-For`, sem internet.*
@@ -437,11 +458,9 @@ Regras:
 - Os logs mostram o identificador anônimo e a quantidade de itens do `X-Forwarded-For`, mas **nunca** o IP.
 - O mesmo IP gera identificadores diferentes depois que o app reinicia (o "tempero" muda).
 
-### T5 — `tests/test_chat.py` — conversa e fallback
-- Se o 1º provedor responde, o 2º não é chamado.
-- Se o 1º falha, o 2º é chamado e sua resposta é usada.
-- Se o 1º e o 2º falham, o 3º é usado.
-- Se todos falham, aparece a mensagem amigável (RF7).
+### T5 — `tests/test_chat.py` — conversa
+*Os casos de fallback ficam no T3 (P6). Aqui se testa a conversa completa usando o fallback.*
+- Se o fallback não consegue resposta, a pessoa vê a mensagem amigável (RF7).
 - Provedores com `ativo: false` são ignorados.
 - O histórico enviado respeita o limite `max_mensagens_historico`.
 - Os limites são conferidos **antes** do fallback começar.
@@ -624,9 +643,9 @@ Cada passo é pequeno e termina com algo que dá para testar. Só passo para o p
 | P3 | Criar o `assistente/cores.py` e o teste T2 | Cálculo de contraste funcionando. |
 | P4 | Criar o `config.yml` (com `identificar_por_ip: false`), a logo `assets/logo.svg` e o `assistente/config.py` (leitura + validação, usando `cores.py`) | Configuração validada com mensagens claras; a logo já existe, então o teste T1 passa desde o início. |
 | P5 | Escrever o teste T1 e o `scripts/validar_config.py` | Testes de configuração passando. |
-| P6 | Criar o `assistente/provedores.py` e o teste T3 | Cada provedor sabe enviar uma pergunta (testado com simulação). |
+| P6 | Criar o `assistente/provedores.py` (provedores + fallback só em falhas temporárias) e o teste T3 | Cada provedor sabe enviar uma pergunta, e o fallback funciona (testado com simulação, sem rede). |
 | P7 | Criar o `assistente/limites.py` (limites globais, identificação segura pelo último item do `X-Forwarded-For`, identificador anônimo) e o teste T4 | Limites funcionando no servidor; IP inventado não engana. |
-| P8 | Criar o `assistente/chat.py` (limites → fallback, logs sem conversas) e o teste T5 | Conversa completa, protegida e com troca de provedor. |
+| P8 | Criar o `assistente/chat.py` (limites → histórico → fallback do P6, logs sem conversas) e o teste T5 | Conversa completa, protegida e com troca de provedor. |
 | P9 | Criar o `assistente/interface.py`, o `app.py` e o teste T6 | Chat abrindo no navegador do seu computador, com as cores do `config.yml`. |
 | P10 | Atualizar o `README.md` (cabeçalho do Hugging Face com `sdk_version`) e criar o teste T7 | Versões alinhadas e conferidas. |
 | P11 | Criar o `scripts/publicar.py` e o teste T9 | Regras de envio, exclusão e proteção conferidas. |
@@ -645,11 +664,11 @@ Cada passo é pequeno e termina com algo que dá para testar. Só passo para o p
 | Space mostra **"Configuration error"** | Falta o cabeçalho YAML no topo do `README.md` ou ele está mal formatado | Conferir se o README começa com `---`, contém `sdk: gradio`, `sdk_version` e `app_file: app.py`, e fecha com `---`. |
 | Space mostra **"Runtime error"** / `ModuleNotFoundError` | Biblioteca faltando no `requirements.txt` | Adicionar a biblioteca ao `requirements.txt` e publicar de novo. |
 | App funciona no computador mas quebra no Space | Versão do Gradio diferente entre o README e o `requirements.txt` | Usar o mesmo número nos dois lugares; o teste T7 avisa antes de publicar. |
-| Chat responde sempre a mensagem amigável de erro | Nenhuma chave configurada no Space ou todas inválidas | Conferir *Settings → Secrets* do Space; os nomes devem ser exatamente `OPENROUTER_API_KEY` etc. Depois, reiniciar o Space. |
-| Erro **401 / Unauthorized** nos logs | Chave errada, expirada ou copiada com espaço sobrando | Gerar uma nova chave no site do provedor e colar de novo, sem espaços. |
-| Erro **402 / sem crédito** | Conta do provedor sem saldo ou limite de gastos atingido | Adicionar créditos, aumentar o limite de gastos ou usar um modelo `:free` do OpenRouter; o fallback cobre enquanto isso. |
+| Chat responde sempre a mensagem amigável de erro | Nenhuma chave configurada no Space, ou o **primeiro** provedor com chave tem erro de chave, permissão ou cobrança (o fallback para nesses casos) | Ler os logs do Space: a linha "Erro de configuração" diz qual provedor e o que corrigir. Conferir *Settings → Secrets*; os nomes devem ser exatamente `OPENROUTER_API_KEY` etc. Depois, reiniciar o Space. |
+| Erro **401 / Unauthorized** nos logs | Chave errada, expirada ou revogada | Gerar uma nova chave no site do provedor e colar de novo. **O fallback não cobre esse erro**: enquanto não for corrigido, o chat não responde. Para usar outro provedor enquanto isso, apague a chave errada do Space (provedor sem chave é pulado) ou coloque `ativo: false` nele. |
+| Erro de **cobrança** nos logs (402, ou 429 `insufficient_quota`, ou "credit balance is too low") | Conta do provedor sem saldo ou limite de gastos atingido | Adicionar créditos, aumentar o limite de gastos ou usar um modelo `:free` do OpenRouter. **O fallback não cobre esse erro**, de propósito, para você perceber o problema. Enquanto isso, dá para desligar o provedor com `ativo: false`. |
 | Erro **404 / model not found** | Nome do modelo errado ou modelo descontinuado | Conferir o nome exato no site do provedor e corrigir no `config.yml`. |
-| Erro **429 / rate limit** do provedor | Muitas perguntas em pouco tempo (comum em modelos gratuitos) | Esperar um pouco; o fallback passa para o próximo provedor. Se for frequente, reduzir os `limites`. |
+| Erro **429 / rate limit** do provedor | Muitas perguntas em pouco tempo (comum em modelos gratuitos) | Esperar um pouco; o fallback passa para o próximo provedor (é uma falha temporária). Se for frequente, reduzir os `limites`. |
 | Muita gente vê "limite de uso de hoje atingido" | `perguntas_por_dia_total` baixo demais para o movimento | Aumentar o valor no `config.yml`, se o orçamento permitir. |
 | Várias pessoas da mesma escola ou empresa são bloqueadas juntas | Elas saem para a internet pelo **mesmo IP**, então contam como uma pessoa só | Aumentar `perguntas_por_minuto_por_pessoa` e `perguntas_por_dia_por_pessoa`. Limite conhecido desta versão simples. |
 | Todo mundo recebe o **mesmo** identificador nos logs | A identificação não está funcionando no Space (ex.: o Hugging Face mudou o jeito de preencher o `X-Forwarded-For`) | Colocar `identificar_por_ip: false` e registrar a limitação no `README.md`. Os limites globais continuam protegendo. |
