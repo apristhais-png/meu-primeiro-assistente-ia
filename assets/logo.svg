@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="titulo">
+  <title id="titulo">Professor de Dados</title>
+  <!-- Fundo: quadrado arredondado azul -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#2563EB"/>
+  <!-- Balão de conversa branco -->
+  <path d="M30 34 h68 a10 10 0 0 1 10 10 v36 a10 10 0 0 1 -10 10 h-38 l-18 14 v-14 h-12 a10 10 0 0 1 -10 -10 v-36 a10 10 0 0 1 10 -10 z" fill="#FFFFFF"/>
+  <!-- Gráfico de barras (dados) dentro do balão -->
+  <rect x="40" y="62" width="10" height="16" rx="2" fill="#2563EB"/>
+  <rect x="56" y="52" width="10" height="26" rx="2" fill="#2563EB"/>
+  <rect x="72" y="44" width="10" height="34" rx="2" fill="#047857"/>
+</svg>
