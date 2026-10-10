@@ -35,6 +35,7 @@
 >   - exemplos de IP do T4 trocados por IPs públicos reais (os antigos eram de faixas de documentação);
 >   - regra para linhas repetidas do `X-Forwarded-For`;
 >   - `httpx2` (usado pelos testes) e `tzdata` (fuso de Brasília) declarados nas dependências.
+> - **Revisão 7 (durante o P8):** regras de segurança para o histórico que vem do navegador (papel `system` descartado, tamanho máximo por mensagem, avisos do assistente removidos).
 
 ---
 
@@ -471,6 +472,9 @@ Regras:
 - O histórico enviado respeita o limite `max_mensagens_historico`.
 - Os limites são conferidos **antes** do fallback começar.
 - O texto da pergunta e o da resposta **não** aparecem nos logs (RF10). *(O teste usa uma frase única, como `pergunta-secreta-123`, e confere que ela não está em nenhuma linha de log.)*
+- Pergunta bloqueada (longa, limite global ou por pessoa) e pergunta vazia **não chamam nenhuma IA** (as IAs simuladas contam zero chamadas).
+- **Conversas não se misturam:** o `Assistente` não guarda conversa nenhuma; o histórico chega com cada pergunta e é copiado. Testado com conversas intercaladas e com 15 conversas ao mesmo tempo.
+- **Histórico vindo do navegador é tratado como não confiável:** papel `system` (ou qualquer papel diferente de `user`/`assistant`) é descartado; cada mensagem é cortada num tamanho máximo; avisos do próprio assistente (limite atingido, falha) saem do histórico junto com a pergunta que os gerou; o histórico original não é alterado.
 
 ### T6 — `tests/test_interface.py` — tela
 - A interface do Gradio é criada sem erro usando o `config.yml` real.
