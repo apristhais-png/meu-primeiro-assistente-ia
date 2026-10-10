@@ -1,0 +1,6 @@
+# Configurações das ferramentas de teste.
+
+[tool.pytest.ini_options]
+# Permite que os testes encontrem a pasta "assistente/" a partir da raiz do projeto.
+pythonpath = ["."]
+testpaths = ["tests"]
