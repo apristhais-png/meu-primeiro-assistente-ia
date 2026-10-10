@@ -38,6 +38,7 @@
 > - **Revisão 7 (durante o P8):** regras de segurança para o histórico que vem do navegador (papel `system` descartado, tamanho máximo por mensagem, avisos do assistente removidos).
 > - **Revisão 8 (durante o P9):** detalhes da tela: balão da pessoa e links nas cores do `config.yml`, balão da IA com o fundo validado, modo claro/escuro forçado, API `/chat` com os mesmos limites da tela.
 > - **Revisão 9 (durante o P10):** o teste T7 também confere o cabeçalho do README (topo, `app_file`, Python 3.11 entre aspas, regras do Hugging Face) e que todas as bibliotecas têm versão fixada.
+> - **Revisão 10 (durante o P11):** `scripts/publicar.py` só simula sem `--publicar`, envia só arquivos do Git na lista permitida, cancela tudo diante de arquivo perigoso, chave, config inválido, falta de essencial ou exclusão em massa, e publica numa única atualização presa à versão lida do Space. `huggingface_hub` declarado no `requirements-dev.txt`.
 
 ---
 
@@ -526,6 +527,12 @@ Testes:
 - A lista do que pode ser **apagado** no Space contém **apenas** caminhos do app.
 - Arquivos protegidos **nunca** podem ser apagados: `.gitattributes` e qualquer arquivo fora das pastas do app.
 - Simulação: se o Space tem `assets/logo-antiga.svg` e o projeto não tem mais, ele entra na lista para apagar. Se o Space tem `.gitattributes` ou `dados/arquivo.csv`, eles **não** entram.
+- Só arquivos **guardados no Git** são enviados (um `.env` ou rascunho fora do Git nunca vai).
+- Arquivo perigoso dentro de uma pasta do app (`.env`, `*.pem`, `*.key`, `*secret*`, `__pycache__`…), chave dentro de um arquivo enviado, `config.yml` inválido ou falta de arquivo essencial **cancelam** a publicação inteira.
+- Caminhos estranhos no Space (`..`, `//`, `./`, absolutos, barra invertida) nunca são apagados.
+- Trava contra exclusão em massa: mais de 20 exclusões cancelam a publicação.
+- Sem `--publicar`, o script só **simula** (mostra o plano). A publicação é **uma única atualização**, presa à versão do Space que foi lida (`parent_commit`): se o Space mudou no meio, nada é alterado.
+- `HF_SPACE_ID` ausente ou inválido, ou `HF_TOKEN` ausente, cancelam **antes** de qualquer acesso ao Hugging Face. Erros nunca mostram o token.
 
 ### Como rodar no seu computador
 ```
