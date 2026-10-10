@@ -19,3 +19,7 @@ anthropic==1.13.0
 
 # Lê as chaves do arquivo .env no seu computador
 python-dotenv==1.2.4
+
+# Tabela de fusos horários (o dia dos limites vira à meia-noite de Brasília).
+# Necessária no Windows e em servidores que não trazem essa tabela.
+tzdata==2026.5

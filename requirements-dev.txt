@@ -7,5 +7,10 @@
 # Roda os testes automáticos
 pytest==9.1.1
 
+# Monta respostas e erros HTTP simulados nos testes dos provedores.
+# (As bibliotecas openai e anthropic já o instalam, mas os testes o usam
+# diretamente, então ele precisa estar declarado aqui.)
+httpx2==2.13.1
+
 # Verifica o estilo e erros comuns no código
 ruff==0.17.0
