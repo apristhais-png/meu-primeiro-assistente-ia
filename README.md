@@ -105,5 +105,7 @@ enviado ao GitHub.
   fazer, testes, critérios de aceite e ordem de implementação).
 - `GUIA-publicacao.md`: passo a passo para colocar o assistente no ar no
   Render (serviço, chaves, publicação só depois dos testes).
+- `AUDITORIA-pre-publicacao.md`: resultado da auditoria antes da primeira
+  publicação (critérios de aceite, segurança e limites).
 - `scripts/publicar.py`: legado da época do Hugging Face. Foi mantido (e
   continua testado), mas **não** é usado na publicação pelo Render.

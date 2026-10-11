@@ -62,7 +62,7 @@ limites:
   tamanho_maximo_pergunta: 2000      # em caracteres
 
   # Limites POR PESSOA: só valem se identificar_por_ip for true.
-  identificar_por_ip: false          # só mude para true depois do passo P15 (critério CA24)
+  identificar_por_ip: false          # só mude para true depois do teste do critério CA24 (passo P16)
   perguntas_por_minuto_por_pessoa: 5
   perguntas_por_dia_por_pessoa: 50
 

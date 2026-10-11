@@ -152,17 +152,39 @@ Depois, abra o link `https://<nome-do-servico>.onrender.com`.
 
 ---
 
-## 5. Checklist antes do P15
+## 5. Pendências antes de publicar (resultado da auditoria do P15)
 
-- [ ] Modelos conferidos com `python scripts/conferir_modelos.py` (ou no site de cada provedor)
-- [ ] Limite de gastos definido em cada provedor usado
-- [ ] Conta no Render criada com o GitHub
-- [ ] Decisão sobre o merge do PR #1 na `main` (o Render publica a `main`)
+A auditoria completa está no `AUDITORIA-pre-publicacao.md`. Estas ações
+dependem de **você**, nesta ordem:
 
-No P15, com a sua autorização: criar o serviço (Passo C), cadastrar as chaves
-(Passo D), ligar o *After CI Checks Pass* (Passo E), acompanhar o primeiro
-deploy (Passo F) e fazer o teste da identificação pelo IP (critério CA24).
+1. **Limite de gastos** em cada provedor que você for usar (Passo A).
+   **Obrigatório**: os contadores de limite do app zeram quando o Render dorme.
+2. **Recomendação para a primeira publicação:** cadastre **só** a
+   `OPENROUTER_API_KEY`, com o modelo **gratuito** do `config.yml`. Assim, mesmo
+   no pior caso de abuso, o custo é zero. As chaves pagas (Anthropic e OpenAI)
+   podem entrar depois, quando você quiser o fallback, já com limite de gastos.
+3. **Conferir o modelo gratuito**: rode `python scripts/conferir_modelos.py`
+   (sem custo). Ele deve mostrar `[OK] openrouter: ... (gratuito)`. Se mostrar
+   `[ERRO]` ou `ATENÇÃO: é pago`, me avise antes de publicar.
+4. **Conta no Render** criada com o GitHub.
+5. **Merge do PR #1 na `main`**: decisão sua. O Render publica a `main`, e o
+   `render.yaml`, o `.python-version` e o `app.py` novo só chegam lá com o merge.
+6. **Logo depois de criar o serviço**, ligue o **Auto-Deploy → After CI Checks
+   Pass** (Passo E). O padrão do Render é publicar todo commit, mesmo com teste
+   falhando. O primeiro deploy, feito na criação, não tem esse risco, porque a
+   `main` já estará verde.
+
+## 6. Conferências depois de publicar (P16)
+
+Com o app no ar, conferimos juntos o que só dá para ver no link público:
+
+- [ ] O link `https://<nome>.onrender.com` abre (CA1). O primeiro acesso pode levar cerca de 1 minuto.
+- [ ] Nome, logo e cores aparecem (CA2, CA18).
+- [ ] A IA responde, lembra da conversa e responde em português mesmo a uma pergunta em inglês (CA21, CA22).
+- [ ] Nos *Logs*: Python 3.11, `Provedores com chave configurada: openrouter` e `Abrindo o app em 0.0.0.0:...`.
+- [ ] Um commit com teste falhando **não** gera deploy (CA16).
+- [ ] Identificação por IP: manter **desligada** ou fazer o teste do CA24.
 
 Quando terminar cada etapa, me conte **só** o que foi feito (por exemplo:
-"serviço criado: `professor-de-dados`; chave do OpenRouter cadastrada;
-Auto-Deploy em After CI Checks Pass"). **Nunca** envie as chaves no chat.
+"limite de gastos definido no OpenRouter; conta no Render criada").
+**Nunca** envie as chaves no chat.

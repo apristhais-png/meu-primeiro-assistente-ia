@@ -42,6 +42,7 @@
 > - **Revisão 11 (durante o P12):** o workflow roda em todo Pull Request e em push na `main` (pushes num PR já disparam pelo próprio PR, sem rodar duas vezes). Novo `tests/test_workflow.py` confere gatilhos, Python 3.11, todas as verificações, nenhuma falha escondida e nenhum segredo ou publicação no job "testar".
 > - **Revisão 12 (durante o P13):** `GUIA-publicacao.md` com o passo a passo para você e a situação dos modelos; `scripts/conferir_modelos.py` confere os modelos só consultando a lista de cada provedor (sem custo). Modelo da Anthropic confirmado na documentação oficial; OpenRouter e OpenAI ficaram pendentes (sites inacessíveis no ambiente de desenvolvimento).
 > - **Revisão 13 (P14 — mudança de hospedagem):** o Hugging Face Spaces passou a exigir plano pago para rodar Gradio, então a publicação passa a ser no **Render Free Web Service**. Novos `render.yaml` e `.python-version` (3.11); o `app.py` escuta em `0.0.0.0:PORT` no Render (e só em `127.0.0.1:7860` no seu computador). O Render publica sozinho a `main` depois que o GitHub Actions passa (*After CI Checks Pass*), então **não há job "publicar"** no GitHub Actions e não é preciso `HF_TOKEN` nem `HF_SPACE_ID`. `scripts/publicar.py` e o teste T9 ficam como **legado**, mantidos e passando. CA16 e CA17 foram substituídos por critérios do Render. A seção 7 foi reescrita.
+> - **Revisão 14 (P15 — auditoria):** o P15 virou uma **auditoria pré-publicação, sem publicar** (resultado em `AUDITORIA-pre-publicacao.md`). A criação do serviço no Render, o primeiro deploy e a decisão do CA24 passaram para o P16. Recomendação registrada: primeira publicação **só com a chave do OpenRouter (modelo gratuito)**, porque os contadores de limite zeram quando o Render grátis dorme.
 
 ---
 
@@ -633,6 +634,8 @@ O link público https://<nome>.onrender.com é atualizado
 | **Memória** (512 MB, segundo fontes de terceiros) | Medido em teste local: o app usa cerca de **190 MB** parado. |
 | **Arquivos não persistem** | Tudo que o app gravasse em disco se perderia; o assistente não grava nada. |
 
+**Pior caso dos limites no Render grátis:** como os contadores zeram quando o serviço dorme, alguém poderia fazer 500 perguntas, esperar 15 minutos e repetir, passando bastante de 500 por dia. Por isso o **limite de gastos nos provedores** é obrigatório, e a primeira publicação deve usar **só o modelo gratuito do OpenRouter** (Revisão 14).
+
 ---
 
 ## 8. Critérios de aceite (CA)
@@ -689,8 +692,8 @@ Cada passo é pequeno e termina com algo que dá para testar. Só passo para o p
 | P12 | Criar o `.github/workflows/ci-deploy.yml` (só o Job "testar") | Testes rodando automaticamente no GitHub. |
 | P13 | Conferir os modelos (`scripts/conferir_modelos.py`, sem custo) e preparar o guia de publicação | Situação dos modelos registrada; `GUIA-publicacao.md` pronto. |
 | P14 | Preparar o Render: `render.yaml`, `.python-version` (3.11), `app.py` escutando em `0.0.0.0:PORT`, teste `tests/test_render.py` e guia atualizado. **Sem job "publicar" no GitHub Actions:** o Render publica sozinho com *After CI Checks Pass*. | Tudo pronto para você criar o serviço no Render (feito por você, com o guia). |
-| P15 | Criar o serviço no Render pelo guia, fazer o primeiro deploy da `main` e testar a identificação pelo IP no Render (seção 4.3, CA24): ligar `identificar_por_ip` temporariamente, fazer os 4 testes e decidir | App no ar no Render; decisão registrada: identificação ligada (comprovada) **ou** desligada, com a limitação anotada no `README.md`. |
-| P16 | Conferir todos os critérios de aceite (CA1 a CA25) | Parte 1 concluída. ✅ |
+| P15 | **Auditoria pré-publicação, sem publicar:** simular o Render (Python 3.11, só `requirements.txt`, `PORT`), testar o chat com provedor simulado, revisar a segurança das chaves (inclusive no histórico do Git), conferir limites, GitHub Actions, Render e critérios de aceite. Resultado em `AUDITORIA-pre-publicacao.md`. | Relatório com o que está aprovado, o que falta e o que depende de você. |
+| P16 | **Publicar com você:** criar o serviço no Render pelo guia, cadastrar a chave, ligar *After CI Checks Pass*, primeiro deploy da `main`; conferir no link os critérios que dependem do app no ar (CA1, CA2, CA12, CA16, CA17, CA18, CA21, CA22) e decidir o CA24 (testar a identificação pelo IP ou mantê-la desligada). | Parte 1 concluída. ✅ |
 
 ---
 
