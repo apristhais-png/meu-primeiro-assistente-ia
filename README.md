@@ -88,3 +88,5 @@ enviado ao GitHub.
 - `IDEIA-parte1.md`: a ideia original.
 - `SPEC-parte1-cicd-deploy.md`: a especificação completa (o que o sistema deve
   fazer, testes, critérios de aceite e ordem de implementação).
+- `GUIA-publicacao.md`: passo a passo para colocar o assistente no ar no
+  Hugging Face (Space, Secrets, token e configuração do GitHub).

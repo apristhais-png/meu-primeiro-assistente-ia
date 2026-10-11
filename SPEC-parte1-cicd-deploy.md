@@ -40,6 +40,7 @@
 > - **Revisão 9 (durante o P10):** o teste T7 também confere o cabeçalho do README (topo, `app_file`, Python 3.11 entre aspas, regras do Hugging Face) e que todas as bibliotecas têm versão fixada.
 > - **Revisão 10 (durante o P11):** `scripts/publicar.py` só simula sem `--publicar`, envia só arquivos do Git na lista permitida, cancela tudo diante de arquivo perigoso, chave, config inválido, falta de essencial ou exclusão em massa, e publica numa única atualização presa à versão lida do Space. `huggingface_hub` declarado no `requirements-dev.txt`.
 > - **Revisão 11 (durante o P12):** o workflow roda em todo Pull Request e em push na `main` (pushes num PR já disparam pelo próprio PR, sem rodar duas vezes). Novo `tests/test_workflow.py` confere gatilhos, Python 3.11, todas as verificações, nenhuma falha escondida e nenhum segredo ou publicação no job "testar".
+> - **Revisão 12 (durante o P13):** `GUIA-publicacao.md` com o passo a passo para você e a situação dos modelos; `scripts/conferir_modelos.py` confere os modelos só consultando a lista de cada provedor (sem custo). Modelo da Anthropic confirmado na documentação oficial; OpenRouter e OpenAI ficaram pendentes (sites inacessíveis no ambiente de desenvolvimento).
 
 ---
 
@@ -124,6 +125,7 @@ meu-primeiro-assistente-ia/
 │   └── interface.py            # Monta a tela do Gradio usando a configuração
 ├── scripts/
 │   ├── validar_config.py       # Confere o config.yml antes de publicar
+│   ├── conferir_modelos.py     # Confere se os modelos existem nos provedores (só consulta, sem custo)
 │   ├── verificar_segredos.py   # Procura chaves de API reais esquecidas nos arquivos
 │   └── publicar.py             # Envia ao Space só o necessário e apaga o que saiu
 ├── tests/
@@ -136,7 +138,8 @@ meu-primeiro-assistente-ia/
 │   ├── test_versoes.py         # Versão do Gradio igual em todos os arquivos
 │   ├── test_segredos.py        # Verificação de chaves
 │   ├── test_publicar.py        # Regras de publicação (o que envia, o que apaga, o que protege)
-│   └── test_workflow.py        # O workflow: gatilhos, verificações, sem segredos no job testar
+│   ├── test_workflow.py        # O workflow: gatilhos, verificações, sem segredos no job testar
+│   └── test_conferir_modelos.py # Conferência de modelos (simulada, sem custo)
 ├── .github/
 │   └── workflows/
 │       └── ci-deploy.yml       # Robô: testa e depois publica no Hugging Face
@@ -146,6 +149,7 @@ meu-primeiro-assistente-ia/
 ├── .gitignore                  # Garante que .env e lixo não subam para o GitHub
 ├── README.md                   # Explicação do projeto + cabeçalho exigido pelo Hugging Face
 ├── IDEIA-parte1.md             # Ideia original
+├── GUIA-publicacao.md          # Passo a passo do Hugging Face, do GitHub e dos provedores (P13)
 └── SPEC-parte1-cicd-deploy.md  # Este documento
 ```
 
@@ -680,7 +684,7 @@ Cada passo é pequeno e termina com algo que dá para testar. Só passo para o p
 | P10 | Atualizar o `README.md` (cabeçalho do Hugging Face com `sdk_version`) e criar o teste T7 | Versões alinhadas e conferidas. |
 | P11 | Criar o `scripts/publicar.py` e o teste T9 | Regras de envio, exclusão e proteção conferidas. |
 | P12 | Criar o `.github/workflows/ci-deploy.yml` (só o Job "testar") | Testes rodando automaticamente no GitHub. |
-| P13 | Configuração inicial no Hugging Face, no GitHub e nos provedores (seção 7.3) | Segredos criados e limites de gastos definidos (feito por você, com meu guia). |
+| P13 | Conferir os modelos (`scripts/conferir_modelos.py`, sem custo) e fazer a configuração inicial no Hugging Face, no GitHub e nos provedores seguindo o `GUIA-publicacao.md` (seção 7.3) | Modelos confirmados, segredos criados e limites de gastos definidos (feito por você, com o guia). |
 | P14 | Adicionar o Job "publicar" ao workflow | Publicação automática funcionando, só com os limites globais (`identificar_por_ip: false`). |
 | P15 | Testar a identificação pelo IP no Space (seção 4.3, CA24): ligar `identificar_por_ip` temporariamente, fazer os 4 testes e decidir | Decisão registrada: identificação ligada (comprovada) **ou** desligada, com a limitação anotada no `README.md`. |
 | P16 | Conferir todos os critérios de aceite (CA1 a CA25) | Parte 1 concluída. ✅ |
