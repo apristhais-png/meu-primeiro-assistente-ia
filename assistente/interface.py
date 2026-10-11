@@ -16,6 +16,7 @@ import base64
 import html
 import logging
 import mimetypes
+import os
 from pathlib import Path
 
 import gradio as gr
@@ -191,3 +192,26 @@ def opcoes_de_lancamento(config: Configuracao, raiz: Path = RAIZ_DO_PROJETO) -> 
     if config.assistente.logo:
         opcoes["favicon_path"] = str(raiz / config.assistente.logo)
     return opcoes
+
+
+# ---------- Endereço do servidor (Render ou computador local) ----------
+
+ENDERECO_LOCAL = ("127.0.0.1", 7860)
+
+
+def endereco_do_servidor(ambiente=None) -> tuple[str, int]:
+    """Onde o app escuta.
+
+    - No Render: a variável PORT existe. O app escuta em 0.0.0.0 (todas as
+      interfaces), na porta PORT, como o Render exige.
+    - No seu computador (sem PORT): só em 127.0.0.1:7860, para o app não
+      ficar visível para outras máquinas da sua rede.
+    """
+    ambiente = os.environ if ambiente is None else ambiente
+    valor = (ambiente.get("PORT") or "").strip()
+    if not valor:
+        return ENDERECO_LOCAL
+    if not valor.isdigit() or not 1 <= int(valor) <= 65535:
+        raise ValueError(f"PORT inválida: {valor!r}. Use um número entre 1 e 65535.")
+    # O Render exige escutar em todas as interfaces (0.0.0.0).
+    return "0.0.0.0", int(valor)

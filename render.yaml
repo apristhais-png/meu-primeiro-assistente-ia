@@ -1,0 +1,34 @@
+# =============================================================
+# Configuração do Render (Blueprint) — passo P14
+# =============================================================
+# O Render lê este arquivo para criar o serviço web do assistente.
+# Veja o passo a passo no GUIA-publicacao.md.
+#
+# SEGURANÇA: as chaves de IA aparecem aqui SEM valor ("sync: false").
+# O Render pede os valores no painel na primeira vez; eles nunca ficam
+# no repositório.
+#
+# Versão do Python: vem do arquivo .python-version (3.11).
+# Publicação só depois dos testes: no painel do Render, deixe
+# "Auto-Deploy" como "After CI Checks Pass" (veja o guia).
+# =============================================================
+
+services:
+  - type: web
+    name: professor-de-dados
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    # O app.py lê a variável PORT do Render e escuta em 0.0.0.0.
+    startCommand: python app.py
+    envVars:
+      - key: GRADIO_ANALYTICS_ENABLED
+        value: "False"
+      # Chaves de IA: preencha no painel do Render. Não precisa ter as três.
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

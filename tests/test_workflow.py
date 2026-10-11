@@ -99,7 +99,7 @@ def test_checkout_nao_guarda_credenciais(testar):
 
 
 def test_por_enquanto_nenhum_job_publica(workflow):
-    # P12: só o job "testar". O passo P14 vai acrescentar o job "publicar"
-    # e atualizar este teste.
+    # Só o job "testar": quem publica é o Render, depois que este job passa
+    # (Revisão 13). O GitHub Actions nunca publica nada.
     assert list(workflow["jobs"]) == ["testar"]
     assert "publicar.py" not in WORKFLOW.read_text(encoding="utf-8").split("jobs:", 1)[1]

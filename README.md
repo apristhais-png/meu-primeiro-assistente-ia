@@ -16,15 +16,16 @@ short_description: Aprenda Engenharia de Dados e IA de forma simples
 Um chat que ensina **Engenharia de Dados e IA** de forma simples, aberto para
 qualquer pessoa pelo navegador.
 
-> **Sobre o bloco no topo deste arquivo (entre as linhas `---`):** é o cabeçalho
-> que o Hugging Face Spaces lê para saber como rodar o app: usa **Gradio**
-> (`sdk`), na versão `sdk_version`, com **Python 3.11**, abrindo o arquivo
-> **`app.py`**. Não apague esse bloco.
+> **Onde o app fica no ar:** no **Render** (plano gratuito). O Render usa o
+> `render.yaml`, o `.python-version` (Python 3.11) e roda `python app.py`. Veja o
+> `GUIA-publicacao.md`.
 >
-> ⚠️ O `sdk_version` precisa ser **igual** à versão do Gradio no
-> `requirements.txt`. Para atualizar o Gradio, mude os dois juntos, no mesmo
-> commit. Um teste automático (`tests/test_versoes.py`) bloqueia a publicação se
-> eles forem diferentes.
+> **Sobre o bloco no topo deste arquivo (entre as linhas `---`):** é o cabeçalho
+> do Hugging Face Spaces, onde o projeto seria publicado antes. O Render o
+> ignora, mas ele foi mantido: o `sdk_version` precisa continuar **igual** à
+> versão do Gradio no `requirements.txt`, e um teste automático
+> (`tests/test_versoes.py`) confere isso. Para atualizar o Gradio, mude os dois
+> juntos, no mesmo commit.
 
 ## O que ele faz
 
@@ -56,6 +57,20 @@ Abra no navegador o endereço mostrado (normalmente http://127.0.0.1:7860).
 Sem nenhuma chave, a tela abre, mas as perguntas recebem uma mensagem amigável
 de erro.
 
+> No seu computador, o app escuta só em `127.0.0.1` (não fica visível para
+> outras máquinas da rede). No Render, ele escuta em `0.0.0.0`, na porta da
+> variável `PORT`, como o Render exige.
+
+## Como publicar (Render)
+
+1. O GitHub Actions testa cada Pull Request e cada push na `main`.
+2. O Render publica a `main` sozinho, **só depois** que os testes passam
+   (opção *After CI Checks Pass*).
+3. As chaves de IA ficam na aba *Environment* do Render, nunca no repositório.
+
+O passo a passo completo, incluindo os limites do plano gratuito (o serviço
+dorme após 15 minutos sem acesso), está no `GUIA-publicacao.md`.
+
 ## Como personalizar
 
 Edite o `config.yml` (cada campo tem um comentário explicando) e confira se
@@ -78,7 +93,7 @@ python scripts/verificar_segredos.py # chaves de API esquecidas nos arquivos
 
 | Chave | Onde configurar |
 |---|---|
-| `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | No seu computador: arquivo `.env`. No Hugging Face: *Settings → Variables and secrets*. |
+| `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | No seu computador: arquivo `.env`. No Render: aba *Environment* do serviço. |
 
 **Nunca** coloque chaves no `config.yml`, no código ou em qualquer arquivo
 enviado ao GitHub.
@@ -89,4 +104,6 @@ enviado ao GitHub.
 - `SPEC-parte1-cicd-deploy.md`: a especificação completa (o que o sistema deve
   fazer, testes, critérios de aceite e ordem de implementação).
 - `GUIA-publicacao.md`: passo a passo para colocar o assistente no ar no
-  Hugging Face (Space, Secrets, token e configuração do GitHub).
+  Render (serviço, chaves, publicação só depois dos testes).
+- `scripts/publicar.py`: legado da época do Hugging Face. Foi mantido (e
+  continua testado), mas **não** é usado na publicação pelo Render.

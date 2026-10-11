@@ -1,12 +1,17 @@
-# Guia de publicação (passo P13)
+# Guia de publicação no Render (passos P13 e P14)
 
-Este guia prepara tudo para o assistente ir ao ar no **Hugging Face Spaces**.
-Nada aqui publica o app: a publicação automática só entra no passo P14.
+Este guia prepara tudo para o assistente ir ao ar no **Render** (plano gratuito,
+*Free Web Service*). Nada aqui publica o app sozinho: quem cria o serviço no
+Render é você, seguindo os passos abaixo.
 
-> 🔒 **Regra de ouro:** chaves e tokens **nunca** vão para o chat, para o código,
-> para issues/PRs ou para qualquer arquivo do repositório. Eles só são colados
-> nas telas de *Secrets* do Hugging Face e do GitHub (e no seu `.env` local).
-> Se uma chave vazar, **revogue-a na hora** no site do provedor e crie outra.
+> **Por que Render?** O Hugging Face Spaces passou a exigir plano pago para
+> rodar apps Gradio. O app, os testes e o GitHub Actions continuam os mesmos;
+> só mudou o lugar onde o app fica no ar.
+
+> 🔒 **Regra de ouro:** chaves **nunca** vão para o chat, para o código, para
+> issues/PRs ou para qualquer arquivo do repositório. Elas só são coladas na aba
+> *Environment* do Render (e no seu `.env` local). Se uma chave vazar,
+> **revogue-a na hora** no site do provedor e crie outra.
 
 ---
 
@@ -45,10 +50,18 @@ Você não precisa ter as três chaves: o assistente usa as que existirem.
 
 ## 2. O que você vai precisar
 
-- Conta no **Hugging Face** (gratuita): https://huggingface.co/join
+- Conta no **Render** (gratuita): https://render.com. Entre com a sua conta
+  do **GitHub**, assim o Render consegue ler o repositório.
 - Pelo menos **uma** chave de IA. A mais barata para começar é a do
   **OpenRouter** com modelo gratuito.
-- Acesso de administrador ao repositório no **GitHub** (você já tem).
+
+O que **já está pronto** no repositório:
+
+| Arquivo | Para que serve |
+|---|---|
+| `render.yaml` | Configuração do serviço: web, Python, plano **free**, branch `main`, `pip install -r requirements.txt` e `python app.py`. As chaves aparecem **sem valor**. |
+| `.python-version` | Faz o Render usar **Python 3.11** (o padrão dele é mais novo). |
+| `app.py` | Escuta em `0.0.0.0` na porta `PORT` que o Render informa. |
 
 ---
 
@@ -56,8 +69,9 @@ Você não precisa ter as três chaves: o assistente usa as que existirem.
 
 ### Passo A: limite de gastos em cada provedor (critério CA12)
 No painel de cada provedor que você usar, defina um **limite de gastos**
-mensal (por exemplo, alguns dólares). É a proteção mais forte dos seus créditos:
-vale mesmo se algo der errado no código.
+mensal (por exemplo, alguns dólares). É a proteção mais forte dos seus créditos.
+No Render gratuito, os contadores de limite do app **zeram** sempre que o
+serviço dorme, então o limite do provedor é o que garante o teto de gastos.
 
 | Provedor | Onde procurar |
 |---|---|
@@ -68,23 +82,31 @@ vale mesmo se algo der errado no código.
 > Os nomes dos menus mudam de vez em quando; se não encontrar, procure por
 > "limit" ou "budget" na página de cobrança.
 
-### Passo B: criar o Space
-1. Acesse https://huggingface.co/new-space
-2. **Space name:** por exemplo `professor-de-dados`.
-3. **SDK:** escolha **Gradio**.
-4. **Hardware:** **CPU basic** (gratuito). Ele "dorme" depois de um tempo sem
-   uso; o primeiro acesso depois disso demora um pouco.
-5. **Visibilidade:** **Public**.
-6. Crie o Space. Anote o nome completo, no formato `seu-usuario/professor-de-dados`.
-   Esse é o seu **HF_SPACE_ID**.
+### Passo B: decidir quando o código vai para a `main`
+O Render publica a branch **`main`**. Hoje, o `render.yaml`, o `.python-version`
+e o `app.py` novo estão **só no PR #1**. Eles chegam à `main` quando você fizer
+o merge do PR #1 (isso fica para o P15, com a sua decisão).
 
-> O Hugging Face cria sozinho um `README.md` e um `.gitattributes`. Pode
-> deixar como está: a publicação do P14 substitui o `README.md` pelo nosso e
-> **nunca** mexe no `.gitattributes`.
+### Passo C: criar o serviço no Render
+**Opção 1 — pelo `render.yaml` (recomendada):**
+1. No painel do Render: **New** → **Blueprint**.
+2. Escolha o repositório `meu-primeiro-assistente-ia` e a branch **`main`**.
+3. O Render lê o `render.yaml` e mostra o serviço `professor-de-dados`.
+4. Ele vai **pedir os valores** de `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY` e
+   `OPENAI_API_KEY`. Preencha as chaves que você tiver e deixe as outras vazias.
 
-### Passo C: cadastrar as chaves de IA no Space
-1. No Space: **Settings** → **Variables and secrets** → **New secret**.
-2. Cadastre **como Secret** (nunca como *Variable*, que é **pública**):
+**Opção 2 — manual (se o Blueprint der algum erro):**
+1. **New** → **Web Service** → escolha o repositório.
+2. **Branch:** `main` · **Runtime/Language:** Python 3 · **Instance Type:** **Free**
+3. **Build Command:** `pip install -r requirements.txt`
+4. **Start Command:** `python app.py`
+5. Em **Environment**, adicione `GRADIO_ANALYTICS_ENABLED` = `False` e as chaves de IA.
+
+> O valor `plan: free` do `render.yaml` foi confirmado só por fontes de
+> terceiros. Se o Render reclamar dele, use a Opção 2.
+
+### Passo D: cadastrar ou trocar as chaves depois
+No serviço: **Environment** → **Add Environment Variable**.
 
 | Nome (exatamente assim) | Valor |
 |---|---|
@@ -92,58 +114,55 @@ vale mesmo se algo der errado no código.
 | `ANTHROPIC_API_KEY` | sua chave da Anthropic (se tiver) |
 | `OPENAI_API_KEY` | sua chave da OpenAI (se tiver) |
 
-Depois de salvo, o valor de um *Secret* não aparece mais na tela, nem para
-você. O Space reinicia sozinho quando os secrets mudam.
+Salvar reinicia o serviço. As variáveis do Render **não** ficam no repositório
+nem aparecem para quem visita o app.
 
-### Passo D: criar o token de publicação do Hugging Face
-1. https://huggingface.co/settings/tokens → **Create new token**.
-2. Prefira o tipo **Fine-grained** e dê permissão de **escrita** (*write*)
-   **somente** ao repositório do seu Space. Se essa opção não aparecer de forma
-   clara, um token do tipo **Write** também funciona, mas dá acesso a todos os
-   seus repositórios (mais arriscado).
-3. Copie o token **uma vez** e cole direto no GitHub (passo E). Não guarde em
-   arquivos.
+### Passo E: publicar só depois dos testes
+No serviço: **Settings** → **Build & Deploy** → **Auto-Deploy** →
+**After CI Checks Pass**.
 
-### Passo E: cadastrar no GitHub
-No repositório: **Settings** → **Secrets and variables** → **Actions**.
+Assim, o Render só publica um commit da `main` quando **todas** as verificações
+do GitHub Actions passarem. Se algum teste falhar, nada é publicado.
 
-| Aba | Botão | Nome | Valor |
-|---|---|---|---|
-| **Secrets** | *New repository secret* | `HF_TOKEN` | o token do passo D |
-| **Variables** | *New repository variable* | `HF_SPACE_ID` | `seu-usuario/professor-de-dados` |
+### Passo F: acompanhar o primeiro deploy
+Na aba **Logs** do serviço, procure:
+- a versão do Python, que deve ser **3.11**;
+- `Provedores com chave configurada: ...`, mostrando **quais** provedores têm
+  chave (nunca a chave em si);
+- `Abrindo o app em 0.0.0.0:10000` (ou outra porta informada pelo Render).
 
-O `HF_SPACE_ID` é uma *Variable* (não é segredo: é o mesmo nome que aparece no
-link público do Space). O `HF_TOKEN` é *Secret*.
+Depois, abra o link `https://<nome-do-servico>.onrender.com`.
 
-> Até o P14, nenhum workflow usa esses valores: o job "testar" foi feito para
-> **não** ter acesso a segredos.
-
-### Passo F (opcional): simular a publicação no seu computador
-Sem token e sem mudar nada no Space, você pode ver o que seria enviado:
-
-```bash
-# Linux/macOS
-HF_SPACE_ID=seu-usuario/professor-de-dados python scripts/publicar.py
-
-# Windows (PowerShell)
-$env:HF_SPACE_ID="seu-usuario/professor-de-dados"; python scripts/publicar.py
-```
-
-A saída mostra `=== SIMULAÇÃO (nada será alterado) ===` e as listas do que
-seria **enviado**, **apagado** e **mantido**.
+### Passo G (opcional): se você já configurou o Hugging Face no P13
+- O `HF_TOKEN` e o `HF_SPACE_ID` **não são mais usados**. Se você os cadastrou
+  no GitHub, pode apagá-los e **revogar o token** no Hugging Face.
+- O Space criado no Hugging Face não é alterado por nada deste projeto. Você
+  pode mantê-lo ou apagá-lo quando quiser.
 
 ---
 
-## 4. Checklist antes do P14
+## 4. Como o plano gratuito do Render se comporta
+
+| O que acontece | O que significa |
+|---|---|
+| **Dorme após 15 minutos sem acesso** | O primeiro acesso depois disso demora **cerca de 1 minuto**. |
+| **Contadores de limite zeram** quando dorme ou reinicia | O limite de gastos nos provedores (Passo A) é a proteção que não zera. |
+| **750 horas grátis por mês** por conta | Serviço dormindo não gasta horas. Se acabarem, os serviços grátis param até o mês seguinte. |
+| **Memória** (512 MB, segundo fontes de terceiros) | Em teste local, o app usou cerca de **190 MB** parado. |
+
+---
+
+## 5. Checklist antes do P15
 
 - [ ] Modelos conferidos com `python scripts/conferir_modelos.py` (ou no site de cada provedor)
 - [ ] Limite de gastos definido em cada provedor usado
-- [ ] Space criado com SDK **Gradio**, hardware gratuito e visibilidade pública
-- [ ] Chaves de IA cadastradas como **Secrets** no Space
-- [ ] `HF_TOKEN` cadastrado como **Secret** no GitHub
-- [ ] `HF_SPACE_ID` cadastrado como **Variable** no GitHub
+- [ ] Conta no Render criada com o GitHub
+- [ ] Decisão sobre o merge do PR #1 na `main` (o Render publica a `main`)
 
-Quando terminar, me conte **só** o que foi feito (por exemplo: "Space criado:
-`usuario/professor-de-dados`; secrets do OpenRouter e da Anthropic cadastrados;
-limite de gastos definido; HF_TOKEN e HF_SPACE_ID no GitHub").
-**Nunca** envie as chaves ou o token no chat.
+No P15, com a sua autorização: criar o serviço (Passo C), cadastrar as chaves
+(Passo D), ligar o *After CI Checks Pass* (Passo E), acompanhar o primeiro
+deploy (Passo F) e fazer o teste da identificação pelo IP (critério CA24).
+
+Quando terminar cada etapa, me conte **só** o que foi feito (por exemplo:
+"serviço criado: `professor-de-dados`; chave do OpenRouter cadastrada;
+Auto-Deploy em After CI Checks Pass"). **Nunca** envie as chaves no chat.

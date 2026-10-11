@@ -1,8 +1,8 @@
 # =============================================================
 # Robô do GitHub Actions (SPEC, seção 7)
 # =============================================================
-# Por enquanto há só o job "testar" (passo P12). O job "publicar" entra no
-# passo P14 e só vai rodar se este job passar.
+# Há só o job "testar". Quem publica é o Render (veja render.yaml): ele só
+# publica a main depois que este job passa ("After CI Checks Pass").
 #
 # Este job:
 #   - NÃO publica nada;

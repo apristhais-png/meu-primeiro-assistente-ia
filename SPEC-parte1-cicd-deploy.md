@@ -8,7 +8,7 @@
 > - Interface: **Python + Gradio**
 > - Ordem dos provedores de IA: **OpenRouter → Anthropic → OpenAI**
 > - Arquivo de configuração: **YAML**, com o nome **`config.yml`** (como na apostila)
-> - Publicação: **automática a cada push na branch `main`**, só se os testes passarem
+> - Publicação: **Render Free Web Service**, automática a cada push na branch `main`, só se os testes do GitHub Actions passarem (*After CI Checks Pass*). *(Antes era o Hugging Face Spaces; veja a Revisão 13.)*
 >
 > **Histórico de revisões:**
 > - **Revisão 2:** limites de uso, verificação de chaves mais precisa, versão do Gradio fixada, exclusão de arquivos antigos na publicação, cores personalizadas.
@@ -41,6 +41,7 @@
 > - **Revisão 10 (durante o P11):** `scripts/publicar.py` só simula sem `--publicar`, envia só arquivos do Git na lista permitida, cancela tudo diante de arquivo perigoso, chave, config inválido, falta de essencial ou exclusão em massa, e publica numa única atualização presa à versão lida do Space. `huggingface_hub` declarado no `requirements-dev.txt`.
 > - **Revisão 11 (durante o P12):** o workflow roda em todo Pull Request e em push na `main` (pushes num PR já disparam pelo próprio PR, sem rodar duas vezes). Novo `tests/test_workflow.py` confere gatilhos, Python 3.11, todas as verificações, nenhuma falha escondida e nenhum segredo ou publicação no job "testar".
 > - **Revisão 12 (durante o P13):** `GUIA-publicacao.md` com o passo a passo para você e a situação dos modelos; `scripts/conferir_modelos.py` confere os modelos só consultando a lista de cada provedor (sem custo). Modelo da Anthropic confirmado na documentação oficial; OpenRouter e OpenAI ficaram pendentes (sites inacessíveis no ambiente de desenvolvimento).
+> - **Revisão 13 (P14 — mudança de hospedagem):** o Hugging Face Spaces passou a exigir plano pago para rodar Gradio, então a publicação passa a ser no **Render Free Web Service**. Novos `render.yaml` e `.python-version` (3.11); o `app.py` escuta em `0.0.0.0:PORT` no Render (e só em `127.0.0.1:7860` no seu computador). O Render publica sozinho a `main` depois que o GitHub Actions passa (*After CI Checks Pass*), então **não há job "publicar"** no GitHub Actions e não é preciso `HF_TOKEN` nem `HF_SPACE_ID`. `scripts/publicar.py` e o teste T9 ficam como **legado**, mantidos e passando. CA16 e CA17 foram substituídos por critérios do Render. A seção 7 foi reescrita.
 
 ---
 
@@ -54,8 +55,8 @@
 | **Fallback (alternativa)** | Se o primeiro provedor falhar, o sistema tenta o próximo automaticamente. |
 | **CI/CD** | *Integração e Entrega Contínuas*: um robô testa o código e, se tudo der certo, publica sozinho. |
 | **GitHub Actions** | O robô do GitHub que roda os testes e a publicação. |
-| **Hugging Face Spaces** | Serviço gratuito que hospeda o nosso chat e gera um link público. |
-| **Secret (segredo)** | Lugar seguro no GitHub ou no Hugging Face para guardar chaves sem que apareçam no código. |
+| **Render** | Serviço que hospeda o nosso chat e gera um link público (`https://<nome>.onrender.com`). Usamos o plano gratuito (*Free Web Service*). Antes era o Hugging Face Spaces (veja a Revisão 13). |
+| **Secret (segredo) / variável de ambiente** | Lugar seguro para guardar chaves sem que apareçam no código. No Render, fica na aba *Environment* do serviço. |
 | **Mock (simulação)** | Um "provedor de mentira" usado nos testes, para não gastar dinheiro nem depender da internet. |
 | **Servidor** | O computador do Hugging Face onde o nosso código Python roda. O navegador da pessoa só mostra a tela; quem decide e chama a IA é o servidor. |
 | **Contraste** | Diferença de claridade entre o texto e o fundo. Pouco contraste deixa o texto difícil de ler. É medido por um número: quanto maior, mais legível (21 é o máximo: preto no branco). |
@@ -78,7 +79,7 @@ Nesta Parte 1 o foco é ter a **base funcionando de ponta a ponta**, mantendo o 
 3. **Troca automática de provedor** se um deles falhar.
 4. **Proteção dos créditos** com limites de uso aplicados no servidor: limites **globais** sempre ativos e limites **por pessoa** só quando a identificação for comprovada.
 5. **Testes automáticos** que impedem a publicação de código ou configuração com erro.
-6. **Publicação automática** no Hugging Face Spaces pelo GitHub Actions.
+6. **Publicação automática** no **Render**, só depois que o GitHub Actions aprova o código.
 7. **Nenhuma chave de API** dentro do código ou do repositório.
 
 **Fora do escopo agora** (ficam para as próximas partes): base de documentos (RAG), interface profissional, login e histórico de conversas salvo.
@@ -100,8 +101,8 @@ Nesta Parte 1 o foco é ter a **base funcionando de ponta a ponta**, mantendo o 
 | **Ruff** | Verifica o estilo e erros comuns no código | Muito rápido, pega erros bobos (variável não usada, import faltando) antes dos testes. |
 | **GitHub** | Guarda o código e o histórico | Pedido na IDEIA; também é onde o GitHub Actions roda. |
 | **GitHub Actions** | Testa e publica automaticamente | Gratuito para repositórios públicos e integrado ao GitHub. |
-| **Hugging Face Spaces** | Hospeda o chat com link público | Gratuito, feito para apps de IA, com área própria para segredos. |
-| **huggingface_hub** | Envia os arquivos do GitHub para o Space | Mais simples e confiável do que `git push` direto para o Hugging Face (evita erros com imagens e histórico). Envia tudo em **uma única atualização**, então o Space nunca fica "pela metade". |
+| **Render (Free Web Service)** | Hospeda o chat com link público | Plano gratuito para apps Python; busca o código direto do GitHub e só publica depois que os testes passam (*After CI Checks Pass*). Substituiu o Hugging Face Spaces, que passou a exigir plano pago para rodar Gradio. |
+| **huggingface_hub** | (Legado) Enviava os arquivos para o Space do Hugging Face | Usado só pelo `scripts/publicar.py`, que foi mantido mas **não é usado** na publicação pelo Render (Revisão 13). |
 
 **Não usamos** banco de dados, Redis ou outros serviços extras. Os contadores dos limites ficam na memória do próprio app. Isso mantém o projeto simples (veja a seção 4.3).
 
@@ -111,7 +112,9 @@ Nesta Parte 1 o foco é ter a **base funcionando de ponta a ponta**, mantendo o 
 
 ```
 meu-primeiro-assistente-ia/
-├── app.py                      # Ponto de entrada: o Hugging Face roda este arquivo
+├── app.py                      # Ponto de entrada: o Render roda este arquivo (0.0.0.0, porta PORT)
+├── render.yaml                 # Configuração do serviço no Render (sem chaves)
+├── .python-version             # Python 3.11 para o Render
 ├── config.yml                  # ⭐ Personalização: nome, cores, logo, instruções, modelos, limites
 ├── assets/
 │   └── logo.svg                # Logo do assistente (SVG, leve e sem problemas no upload)
@@ -127,7 +130,7 @@ meu-primeiro-assistente-ia/
 │   ├── validar_config.py       # Confere o config.yml antes de publicar
 │   ├── conferir_modelos.py     # Confere se os modelos existem nos provedores (só consulta, sem custo)
 │   ├── verificar_segredos.py   # Procura chaves de API reais esquecidas nos arquivos
-│   └── publicar.py             # Envia ao Space só o necessário e apaga o que saiu
+│   └── publicar.py             # LEGADO do Hugging Face: mantido, mas não usado pelo Render
 ├── tests/
 │   ├── test_config.py          # Configuração
 │   ├── test_cores.py           # Contraste e legibilidade
@@ -139,17 +142,18 @@ meu-primeiro-assistente-ia/
 │   ├── test_segredos.py        # Verificação de chaves
 │   ├── test_publicar.py        # Regras de publicação (o que envia, o que apaga, o que protege)
 │   ├── test_workflow.py        # O workflow: gatilhos, verificações, sem segredos no job testar
-│   └── test_conferir_modelos.py # Conferência de modelos (simulada, sem custo)
+│   ├── test_conferir_modelos.py # Conferência de modelos (simulada, sem custo)
+│   └── test_render.py          # render.yaml, Python 3.11 e porta PORT/0.0.0.0
 ├── .github/
 │   └── workflows/
-│       └── ci-deploy.yml       # Robô: testa e depois publica no Hugging Face
+│       └── ci-deploy.yml       # Robô: testa (o Render só publica se ele passar)
 ├── requirements.txt            # Bibliotecas que o app precisa (única fonte da versão do Gradio)
 ├── requirements-dev.txt        # Bibliotecas extras só para testes (pytest, ruff), sem Gradio
 ├── .env.example                # Modelo de .env, SEM chaves reais
 ├── .gitignore                  # Garante que .env e lixo não subam para o GitHub
-├── README.md                   # Explicação do projeto + cabeçalho exigido pelo Hugging Face
+├── README.md                   # Explicação do projeto (+ cabeçalho do Hugging Face, mantido; o Render o ignora)
 ├── IDEIA-parte1.md             # Ideia original
-├── GUIA-publicacao.md          # Passo a passo do Hugging Face, do GitHub e dos provedores (P13)
+├── GUIA-publicacao.md          # Passo a passo do Render e dos provedores (P13/P14)
 └── SPEC-parte1-cicd-deploy.md  # Este documento
 ```
 
@@ -157,6 +161,8 @@ meu-primeiro-assistente-ia/
 Cada arquivo tem uma única tarefa. Assim fica mais fácil achar um erro, testar cada parte sozinha e trocar uma peça (ex.: um provedor) sem quebrar o resto.
 
 ### 3.2 Versão do Gradio igual em todos os arquivos
+> **Com o Render (Revisão 13):** o Render instala o Gradio pela versão do `requirements.txt`. O cabeçalho do `README.md` foi mantido (o Render o ignora), e o teste T7 continua garantindo que as duas versões sejam iguais, caso o projeto volte a usar o Hugging Face.
+
 O Hugging Face instala o Gradio pela versão escrita no **cabeçalho do `README.md`** (`sdk_version`), e não pela do `requirements.txt`. Se forem diferentes, o app pode funcionar no seu computador e quebrar no Space.
 
 Regras:
@@ -272,28 +278,30 @@ provedores:
 4. Se `identificar_por_ip` for `true`, o servidor tenta identificar a pessoa (veja abaixo). Se conseguir, confere os **limites por pessoa**. Se não conseguir, a pergunta segue só com os limites globais, que já foram conferidos.
 5. Se tudo estiver dentro do limite, conta +1 e só então chama a IA.
 
-#### Como o IP é obtido com segurança no Hugging Face
+#### Como o IP é obtido com segurança no Render
 
-**O problema:** no Hugging Face, o app não recebe a conexão direto da pessoa. Ela passa antes pelo **proxy** do Hugging Face. Por isso:
+**O problema:** no Render, o app não recebe a conexão direto da pessoa. Ela passa antes pelo **proxy** do Render. Por isso:
 - o "IP da conexão" que o app enxerga é o do **proxy**, e é igual para todo mundo. Esse valor **nunca** é usado;
 - o IP real chega no campo **`X-Forwarded-For`**, que é uma lista de IPs separados por vírgula. Cada intermediário **acrescenta um IP no fim** da lista;
-- **o começo da lista pode ser inventado** por quem acessa, que pode enviar um `X-Forwarded-For` falso junto com o pedido. O proxy do Hugging Face só acrescenta o IP verdadeiro **depois** do valor falso.
+- **o começo da lista pode ser inventado** por quem acessa, que pode enviar um `X-Forwarded-For` falso junto com o pedido. O proxy do Render só acrescenta o IP verdadeiro **depois** do valor falso.
 
 **A regra que vamos seguir (nunca confiar no começo da lista):**
 1. Ler o `X-Forwarded-For`.
-2. Usar **somente o último item da lista**, que é o escrito pelo proxy do Hugging Face. **Nunca** usar o primeiro item nem qualquer outro.
+2. Usar **somente o último item da lista**, que é o escrito pelo proxy do Render. **Nunca** usar o primeiro item nem qualquer outro.
 3. Conferir se esse item é um IP válido e **público**. Valores como `abc`, vazio, `10.0.0.1`, `192.168.x.x` ou `127.0.0.1` são recusados.
 4. Se o campo não existir, estiver vazio ou o último item for inválido, a pessoa fica como **"não identificada"**. Ela continua sujeita aos limites globais. O app não trava e não mostra erro.
 5. O IP vira um **identificador anônimo**: um código embaralhado com um "tempero" aleatório criado a cada vez que o app inicia, e que fica só na memória. Os contadores e os logs usam apenas esse código, **nunca** o IP.
 
-**Por que começamos com `identificar_por_ip: false`:** a regra acima é uma **hipótese**. Ela depende de o Hugging Face acrescentar exatamente um item no fim da lista, e isso não é garantido pela documentação dele. Por segurança, o app é publicado primeiro **só com os limites globais**. A camada por pessoa só é ligada depois de comprovar a hipótese no próprio Space.
+**Atenção no Render:** pode haver mais de um intermediário antes do app (por exemplo, uma rede de entrega de conteúdo na frente do proxy do Render). Nesse caso, o último item da lista pode ser o IP desse intermediário, e não o da pessoa. O teste abaixo detecta isso: todo mundo aparece com o **mesmo** identificador.
 
-#### Como testar a identificação no Hugging Face (passo P15, critério CA24)
+**Por que começamos com `identificar_por_ip: false`:** a regra acima é uma **hipótese**. Ela depende de o Render acrescentar exatamente um item no fim da lista, e isso não é garantido pela documentação dele. Por segurança, o app é publicado primeiro **só com os limites globais**. A camada por pessoa só é ligada depois de comprovar a hipótese no próprio Space.
+
+#### Como testar a identificação no Render (passo P15, critério CA24)
 Com o app publicado e `identificar_por_ip: true` **temporariamente**:
-1. **Mesma pessoa, mesmo código:** fazer duas perguntas pelo navegador do seu computador. Nos logs do Space, as duas linhas mostram o **mesmo** identificador anônimo.
+1. **Mesma pessoa, mesmo código:** fazer duas perguntas pelo navegador do seu computador. Nos logs do Render, as duas linhas mostram o **mesmo** identificador anônimo.
 2. **Redes diferentes, códigos diferentes:** fazer uma pergunta pelo celular **com o Wi-Fi desligado** (usando os dados móveis). O identificador nos logs deve ser **diferente** do anterior.
 3. **IP inventado não engana:** do seu computador, enviar uma pergunta pelo programa de teste do Gradio (`gradio_client`) com um `X-Forwarded-For` falso (ex.: `203.0.113.7`). O identificador nos logs deve ser **o mesmo** do item 1. Eu preparo o comando pronto nesse passo.
-4. **Formato da lista:** cada linha de log também mostra **quantos itens** o `X-Forwarded-For` tinha. Isso confirma se o Hugging Face acrescenta exatamente um item.
+4. **Formato da lista:** cada linha de log também mostra **quantos itens** o `X-Forwarded-For` tinha. Isso confirma se o Render acrescenta exatamente um item.
 
 **Decisão depois do teste:**
 - **Se os 4 itens passarem:** manter `identificar_por_ip: true`. Os limites por pessoa passam a valer.
@@ -314,7 +322,7 @@ Com o app publicado e `identificar_por_ip: true` **temporariamente**:
 | Limite da pessoa por dia | *"Você atingiu o limite de perguntas de hoje. Volte amanhã!"* |
 
 **Escolhas para manter simples:**
-- Os contadores ficam **na memória** do app, sem banco de dados. Se o Space reiniciar, os contadores voltam a zero. Isso é aceitável porque existe uma segunda proteção: o **limite de gastos no painel dos provedores** (seção 7.3).
+- Os contadores ficam **na memória** do app, sem banco de dados. Se o serviço do Render reiniciar **ou dormir** (plano gratuito: após 15 minutos sem acesso), os contadores voltam a zero. Isso é aceitável porque existe uma segunda proteção: o **limite de gastos no painel dos provedores** (seção 7.3).
 - O "dia" vira à meia-noite no horário de Brasília.
 - O IP é usado **só** para gerar o identificador anônimo: **não** aparece nos logs e não é salvo em arquivo.
 
@@ -353,11 +361,11 @@ As chaves são lidas de **variáveis de ambiente**, nunca do código:
 
 | Variável | Onde configurar |
 |---|---|
-| `OPENROUTER_API_KEY` | **Hugging Face → Space → Settings → Secrets** (e no `.env` local, se quiser testar no seu computador) |
+| `OPENROUTER_API_KEY` | **Render → serviço → Environment** (ou quando o Blueprint pedir); e no `.env` local, se quiser testar no seu computador |
 | `ANTHROPIC_API_KEY` | Mesmo lugar |
 | `OPENAI_API_KEY` | Mesmo lugar |
-| `HF_TOKEN` | **GitHub → Settings → Secrets and variables → Actions → Secrets** (usado só para publicar) |
-| `HF_SPACE_ID` | **GitHub → Settings → Secrets and variables → Actions → Variables** (ex.: `seu-usuario/professor-de-dados`) |
+| ~~`HF_TOKEN`~~ | **Não é mais necessário** com o Render (era do Hugging Face). Se você já cadastrou no GitHub, pode apagar e revogar o token no Hugging Face. |
+| ~~`HF_SPACE_ID`~~ | **Não é mais necessário** com o Render. |
 
 Regras:
 - O arquivo `.env` está no `.gitignore` e **nunca** é enviado ao GitHub.
@@ -388,8 +396,8 @@ Regras:
 | RF13 | **Cores personalizadas legíveis** | Qualquer `#RRGGBB` é aceito se passar no teste de contraste. A cor do texto dos botões é escolhida automaticamente (seção 4.4). |
 | RF14 | **Verificação de chaves vazadas** | `python scripts/verificar_segredos.py` procura chaves **reais** em todos os arquivos do repositório, inclusive a documentação, sem falso alarme com textos de exemplo (seção 6, T8). |
 | RF15 | **Versão do Gradio consistente** | A mesma versão do Gradio em todos os arquivos; se houver diferença, a publicação é bloqueada (seção 3.2). |
-| RF16 | **Publicação que espelha o projeto com segurança** | O Space recebe só os arquivos do app, apaga do Space os arquivos do app que saíram do projeto e **nunca** toca no que precisa permanecer (seção 7.2). |
-| RF17 | **Limites por pessoa com identificação segura** | Quando `identificar_por_ip: true`, usa **somente o último item** do `X-Forwarded-For` (o escrito pelo proxy do Hugging Face) e só se for um IP público válido. Caso contrário, a pessoa fica "não identificada" e vale só o limite global. Começa **desligado** e só é ligado depois de comprovado no Space (seção 4.3, CA24). |
+| RF16 | **(Legado do Hugging Face) Publicação que espelha o projeto com segurança** | Era a regra do `scripts/publicar.py` para o Space. Continua implementada e testada (T9), mas **não é usada** na publicação pelo Render, que sempre usa o repositório da `main` inteiro e instala só o `requirements.txt` (seção 7.2). |
+| RF17 | **Limites por pessoa com identificação segura** | Quando `identificar_por_ip: true`, usa **somente o último item** do `X-Forwarded-For` (o escrito pelo proxy do Render) e só se for um IP público válido. Caso contrário, a pessoa fica "não identificada" e vale só o limite global. Começa **desligado** e só é ligado depois de comprovado no Render (seção 4.3, CA24). |
 
 ---
 
@@ -527,7 +535,8 @@ Testes:
 - A mensagem de alerta não mostra a chave inteira.
 - O repositório real passa sem nenhum alerta.
 
-### T9 — `tests/test_publicar.py` — regras de publicação
+### T9 — `tests/test_publicar.py` — regras de publicação (legado do Hugging Face)
+*Com o Render (Revisão 13), o `scripts/publicar.py` não é mais usado na publicação. O script e estes testes continuam no projeto, passando, como você pediu.*
 - A lista do que é **enviado** contém tudo que o app precisa: `app.py`, `config.yml`, `requirements.txt`, `README.md`, `assistente/` e `assets/`.
 - A lista do que é enviado **não** contém testes, workflows, SPEC, IDEIA ou `.env`.
 - A lista do que pode ser **apagado** no Space contém **apenas** caminhos do app.
@@ -551,7 +560,9 @@ python scripts/verificar_segredos.py
 
 ---
 
-## 7. Publicação pelo GitHub Actions e Hugging Face
+## 7. Publicação pelo GitHub Actions e Render
+
+> **Revisão 13:** a hospedagem mudou do Hugging Face Spaces para o **Render Free Web Service** (o Hugging Face passou a exigir plano pago para rodar Gradio). O app, os testes e o GitHub Actions continuam os mesmos.
 
 ### 7.1 Visão geral do fluxo
 
@@ -560,75 +571,67 @@ Você faz push no GitHub
         │
         ▼
 ┌──────────────────────────────────┐
-│ Job 1: "testar"                  │  roda em todo Pull Request (e cada push nele) e em todo push na main
-│  1. Baixa o código               │
-│  2. Instala Python 3.11          │
-│  3. Instala as bibliotecas       │
-│  4. Procura chaves reais vazadas │
-│  5. Ruff (estilo)                │
-│  6. Valida o config.yml          │
-│     (inclui contraste e limites) │
-│  7. pytest (todos os testes,     │
-│     inclusive versões e regras   │
-│     de publicação)               │
+│ GitHub Actions — job "testar"    │  roda em todo Pull Request e em todo push na main
+│  Python 3.11, bibliotecas,       │
+│  chaves vazadas, Ruff, config,   │
+│  pytest                          │
 └──────────────┬───────────────────┘
-               │ passou? E é push na main?
+               │ passou? E é a branch main?
                ▼
 ┌──────────────────────────────────┐
-│ Job 2: "publicar"                │  só roda se o Job 1 passar E for push na main
-│  1. Baixa o código               │
-│  2. Instala o huggingface_hub    │
-│  3. Roda scripts/publicar.py:    │
-│     envia os arquivos do app e   │
-│     apaga do Space só os arquivos│
-│     do app que saíram do projeto │
-│     (tudo em uma única           │
-│     atualização)                 │
+│ Render (Auto-Deploy:             │  só publica commits da main com TODAS as
+│ "After CI Checks Pass")          │  verificações do GitHub aprovadas
+│  1. Baixa o repositório          │
+│  2. Python 3.11 (.python-version)│
+│  3. pip install -r requirements  │
+│  4. python app.py                │
+│     (0.0.0.0, porta PORT)        │
 └──────────────┬───────────────────┘
                ▼
-Hugging Face reconstrói o Space e o link público é atualizado
+O link público https://<nome>.onrender.com é atualizado
 ```
 
-**Regra mais importante:** se **qualquer** passo do Job 1 falhar, o Job 2 **não roda**. Configuração errada nunca chega ao link público.
+**Regra mais importante:** quem publica é o **Render**, e só depois que **todas** as verificações do GitHub passam (opção *After CI Checks Pass*). Se o job "testar" falhar, o Render **não** publica. O GitHub Actions continua **sem** nenhum segredo e **sem** publicar nada.
 
-**Uma publicação por vez:** se você fizer dois pushes seguidos, o segundo espera o primeiro terminar, para não misturar versões.
+**Por que não há mais job "publicar" no GitHub Actions:** o Render busca o código sozinho no GitHub. Assim, nenhum token de publicação precisa ficar guardado no GitHub.
 
-### 7.2 O que é enviado, o que é apagado e o que é protegido
+### 7.2 Arquivos da publicação
 
-**Enviado ao Space (arquivos do app):**
-- `app.py`, `config.yml`, `requirements.txt`, `README.md`
-- tudo dentro de `assistente/` e de `assets/`
-
-**Apagado do Space:** **apenas** arquivos que estão nos caminhos acima e que **não existem mais** no projeto. Exemplos: uma logo trocada ou um arquivo de código removido. Assim o Space fica igual ao GitHub, sem "lixo" antigo.
-
-**Nunca tocado (protegido):**
-
-| O que | Por que precisa permanecer |
+| Arquivo | Para que serve |
 |---|---|
-| `.gitattributes` | Arquivo de controle que o próprio Hugging Face cria em todo Space. |
-| Qualquer arquivo **fora** das pastas do app | Ex.: um arquivo que você colocou à mão no Space. A publicação só mexe no que ela mesma controla. |
-| **Secrets e variáveis** do Space (chaves de API) | Ficam nas configurações do Space, e não nos arquivos, por isso a publicação não consegue apagá-los. |
-| **Configurações** do Space (hardware, visibilidade, etc.) | Também não são arquivos; não são alteradas. |
-| **Armazenamento persistente** (`/data`), se um dia for ativado | É separado dos arquivos do código; não é afetado. |
+| `render.yaml` | Configuração do serviço no Render (Blueprint): serviço web, Python, plano gratuito, branch `main`, `pip install -r requirements.txt` e `python app.py`. As chaves de IA aparecem **sem valor** (`sync: false`): o Render pede os valores no painel. |
+| `.python-version` | Define o **Python 3.11**. Sem ele, o Render usaria a versão padrão dele (hoje mais nova). |
+| `app.py` | Lê a variável `PORT` do Render e escuta em `0.0.0.0:PORT`. No seu computador, sem `PORT`, escuta só em `127.0.0.1:7860`. |
 
-Essas listas ficam em um único lugar (`scripts/publicar.py`) e são conferidas pelo teste T9. Assim, ninguém altera sem querer o que pode ser apagado.
+**O que o Render instala:** só o `requirements.txt` (o app). O `requirements-dev.txt` (testes) não é instalado no Render.
 
-### 7.3 Configuração inicial (feita uma única vez, por você, com meu passo a passo)
-1. **Criar o Space** no Hugging Face: *New Space* → SDK **Gradio** → visibilidade **Public**.
-2. **Adicionar as chaves de IA** no Space: *Settings → Variables and secrets → New secret* (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). Não é preciso ter as três; o fallback só usa as que existirem.
-3. **Definir um limite de gastos** no painel de cada provedor que você usar (ex.: alguns dólares por mês). Assim, mesmo com muito uso, a conta nunca passa do valor que você escolheu.
-4. **Criar um token** no Hugging Face: *Settings → Access Tokens* → tipo **Write** (ou *fine-grained* com permissão de escrita só nesse Space).
-5. **No GitHub**, em *Settings → Secrets and variables → Actions*:
-   - Secret `HF_TOKEN` = o token do passo 4.
-   - Variable `HF_SPACE_ID` = `seu-usuario/nome-do-space`.
-6. Fazer um push na `main` e acompanhar na aba **Actions** do GitHub.
+**O `.env` nunca vai:** ele está no `.gitignore`, então não existe no GitHub nem no Render. As chaves ficam só na aba *Environment* do Render.
+
+**Legado do Hugging Face (mantido, sem uso):** `scripts/publicar.py` e o teste T9 continuam no projeto e passando, mas **não** fazem parte da publicação no Render. O cabeçalho do `README.md` também continua (o Render o ignora, e o teste T7 continua conferindo a versão do Gradio).
+
+### 7.3 Configuração inicial (feita uma única vez, por você, com o `GUIA-publicacao.md`)
+1. **Definir um limite de gastos** no painel de cada provedor de IA usado.
+2. **Criar a conta no Render** entrando com o GitHub e autorizar o acesso ao repositório.
+3. **Criar o serviço** pelo `render.yaml` (*New → Blueprint*) ou manualmente (*New → Web Service*), sempre com plano **Free** e branch **`main`**. O `render.yaml` só existe na `main` depois que o PR #1 for incorporado (decisão sua, no P15).
+4. **Cadastrar as chaves de IA** na aba *Environment* do serviço (ou quando o Blueprint pedir).
+5. **Ligar o Auto-Deploy "After CI Checks Pass"** em *Settings → Build & Deploy*.
+6. Acompanhar o primeiro deploy nos *Logs* do Render.
 
 ### 7.4 Como mudar uma configuração e ver a atualização
 1. Editar o `config.yml` (ex.: trocar `cor_primaria`).
-2. (Opcional) Rodar `python scripts/validar_config.py` no seu computador para conferir antes.
-3. Fazer commit e push para a `main` (ou abrir um Pull Request e fazer o merge).
-4. O GitHub Actions testa e publica (normalmente em poucos minutos).
-5. O Space reconstrói; ao recarregar o link, a mudança aparece.
+2. (Opcional) Rodar `python scripts/validar_config.py` no seu computador.
+3. Abrir um Pull Request para a `main` e fazer o merge quando o GitHub Actions ficar verde.
+4. O Render espera as verificações da `main` passarem e publica sozinho.
+5. Ao recarregar o link, a mudança aparece.
+
+### 7.5 Limitações do plano gratuito do Render
+| Limitação | O que significa para o assistente |
+|---|---|
+| **Dorme após 15 minutos sem acesso** | O primeiro acesso depois disso demora **cerca de 1 minuto**. |
+| **Contadores na memória** | Quando o serviço dorme ou reinicia, os contadores de limite **voltam a zero**. O **limite de gastos nos provedores** é a proteção que não zera. |
+| **750 horas grátis por mês** (por conta) | Serviço dormindo não gasta horas. Se acabarem, os serviços grátis param até o mês seguinte. |
+| **Memória** (512 MB, segundo fontes de terceiros) | Medido em teste local: o app usa cerca de **190 MB** parado. |
+| **Arquivos não persistem** | Tudo que o app gravasse em disco se perderia; o assistente não grava nada. |
 
 ---
 
@@ -638,9 +641,9 @@ Essas listas ficam em um único lugar (`scripts/publicar.py`) e são conferidas 
 
 | # | Critério | Como verificar |
 |---|---|---|
-| CA1 | O chat responde pelo link público | Abrir `https://huggingface.co/spaces/<usuario>/<space>` e fazer uma pergunta. |
+| CA1 | O chat responde pelo link público | Abrir `https://<nome-do-servico>.onrender.com` e fazer uma pergunta (o primeiro acesso depois de um tempo parado pode levar cerca de 1 minuto). |
 | CA2 | A personalização funciona | Mudar o `nome` e a `cor_primaria` no `config.yml`, fazer push e ver a mudança no link. |
-| CA3 | O fallback funciona | Remover temporariamente a chave do OpenRouter no Space: o chat continua respondendo pelo próximo provedor. |
+| CA3 | O fallback funciona | Remover temporariamente a chave do OpenRouter na aba *Environment* do Render: o chat continua respondendo pelo próximo provedor. |
 | CA4 | Falha total é amigável | Sem nenhuma chave, o chat mostra a mensagem amigável, sem erro técnico. |
 | CA5 | Configuração errada é bloqueada | Em um Pull Request, colocar `cor_primaria: "azul"`: o GitHub Actions fica **vermelho** e nada é publicado. |
 | CA6 | Código com erro é bloqueado | Um teste falhando impede o Job "publicar". |
@@ -648,20 +651,20 @@ Essas listas ficam em um único lugar (`scripts/publicar.py`) e são conferidas 
 | CA8 | Testes passam localmente | `pytest` mostra todos os testes passando. |
 | CA9 | Limite por minuto funciona no link público | Com `identificar_por_ip: true`: fazer mais perguntas seguidas do que `perguntas_por_minuto_por_pessoa` permite, e aparece o aviso para aguardar. Se a identificação tiver sido desligada no P15, este critério é verificado pelo CA25. |
 | CA10 | O limite não é burlado recarregando a página | Com `identificar_por_ip: true`: atingir o limite, recarregar a página e perguntar de novo, e o aviso **continua** aparecendo. Se a identificação tiver sido desligada no P15, a recarga não importa, porque vale só o limite global (CA25). |
-| CA11 | Bloqueio não gasta crédito | Nos logs do Space, as perguntas bloqueadas aparecem como "limite atingido", sem nenhuma chamada a provedor. |
+| CA11 | Bloqueio não gasta crédito | Nos *Logs* do Render, as perguntas bloqueadas aparecem como "limite atingido", sem nenhuma chamada a provedor. |
 | CA12 | Limite de gastos definido | O painel de cada provedor usado mostra um limite de gastos configurado. |
 | CA13 | Chave real é detectada | **Só no seu computador**, sem commit: criar um arquivo `.md` temporário com uma chave **falsa no formato completo** (eu forneço o comando que a gera), rodar `git add` nele (sem commit), rodar `python scripts/verificar_segredos.py` e ver o alerta com o arquivo e a linha, sem a chave inteira. Depois, rodar `git rm --cached` e apagar o arquivo. **Nunca** fazer commit ou push dele. No GitHub, a detecção já é comprovada pelo T8. |
 | CA14 | Sem falso alarme na documentação | Com a SPEC, o README e o `.env.example` como estão, a verificação de segurança passa. |
 | CA15 | Versões alinhadas | Em um PR, mudar a versão do Gradio só no `requirements.txt`: o Actions fica **vermelho**. |
-| CA16 | Arquivo antigo some do Space | Adicionar `assets/teste.txt`, publicar e conferir que ele aparece na aba *Files* do Space. Depois, remover o arquivo do projeto, publicar de novo e conferir que ele **sumiu** do Space. A logo continua lá. |
-| CA17 | O que precisa permanecer, permanece | Depois de uma publicação, conferir que o `.gitattributes` continua no Space e que os Secrets (chaves de IA) continuam configurados. |
+| CA16 | Render publica só depois dos testes | Com o *Auto-Deploy* em *After CI Checks Pass*: um commit na `main` com o GitHub Actions **vermelho** não gera deploy no Render; com ele **verde**, gera. *(Substitui o antigo CA16 do Hugging Face.)* |
+| CA17 | Chaves continuam no Render, fora do repositório | Depois de um deploy, a aba *Environment* continua com as chaves, e `render.yaml`, `.env.example` e o GitHub não têm nenhum valor de chave (o verificador de segredos passa). *(Substitui o antigo CA17 do Hugging Face.)* |
 | CA18 | Cores personalizadas aparecem | Trocar a `cor_primaria` para uma cor bem diferente (ex.: `#E11D48`) e ver os botões mudarem no link. |
 | CA19 | Cor ilegível é bloqueada | Em um PR, colocar `cor_secundaria: "#FFFF66"` com tema `claro`: o Actions fica **vermelho**, com mensagem sugerindo uma cor mais escura. |
 | CA20 | Texto dos botões legível | No tema `claro`, com `cor_primaria: "#D97706"` (laranja: contraste 3,19 com o fundo, passa na regra de bordas), o texto dos botões fica **preto** (contraste 6,59). Com `#2563EB` (azul-escuro), fica **branco** (contraste 5,17). |
 | CA21 | A IA lembra da conversa (RF2) | Perguntar "O que é ETL?" e, em seguida, "Me dê um exemplo disso". A segunda resposta fala de ETL sem precisar repetir o assunto. |
 | CA22 | As instruções são seguidas (RF3) | Perguntar algo em inglês (ex.: "What is a data lake?"). A resposta vem em **português do Brasil**, simples e com exemplo, como manda o `config.yml`. |
 | CA23 | Pergunta longa é recusada (RF12) | Colar um texto com mais de 2000 caracteres: aparece a mensagem pedindo para resumir, e os logs mostram que nenhum provedor foi chamado. |
-| CA24 | Identificação pelo IP comprovada no Hugging Face (RF17) | Seguir os 4 itens de "Como testar a identificação no Hugging Face" (seção 4.3): mesma pessoa = mesmo identificador; rede diferente = identificador diferente; `X-Forwarded-For` falso **não** muda o identificador; os logs mostram a quantidade de itens esperada. **Resultado:** se tudo passar, `identificar_por_ip: true`; se algo falhar, `identificar_por_ip: false` e a limitação registrada no `README.md`. Os dois resultados são aceitos, desde que a decisão esteja registrada. |
+| CA24 | Identificação pelo IP comprovada no Render (RF17) | Seguir os 4 itens de "Como testar a identificação no Render" (seção 4.3): mesma pessoa = mesmo identificador; rede diferente = identificador diferente; `X-Forwarded-For` falso **não** muda o identificador; os logs mostram a quantidade de itens esperada. **Resultado:** se tudo passar, `identificar_por_ip: true`; se algo falhar, `identificar_por_ip: false` e a limitação registrada no `README.md`. Os dois resultados são aceitos, desde que a decisão esteja registrada. |
 | CA25 | Proteção global funciona sem identificação (RF11) | Com `perguntas_por_minuto_total` baixo **temporariamente** (ex.: 3), fazer perguntas pelo computador e pelo celular (redes diferentes): ao passar de 3 no mesmo minuto, **ambos** veem o aviso de "muito movimentado". Depois, voltar o valor original. |
 
 ---
@@ -684,9 +687,9 @@ Cada passo é pequeno e termina com algo que dá para testar. Só passo para o p
 | P10 | Atualizar o `README.md` (cabeçalho do Hugging Face com `sdk_version`) e criar o teste T7 | Versões alinhadas e conferidas. |
 | P11 | Criar o `scripts/publicar.py` e o teste T9 | Regras de envio, exclusão e proteção conferidas. |
 | P12 | Criar o `.github/workflows/ci-deploy.yml` (só o Job "testar") | Testes rodando automaticamente no GitHub. |
-| P13 | Conferir os modelos (`scripts/conferir_modelos.py`, sem custo) e fazer a configuração inicial no Hugging Face, no GitHub e nos provedores seguindo o `GUIA-publicacao.md` (seção 7.3) | Modelos confirmados, segredos criados e limites de gastos definidos (feito por você, com o guia). |
-| P14 | Adicionar o Job "publicar" ao workflow | Publicação automática funcionando, só com os limites globais (`identificar_por_ip: false`). |
-| P15 | Testar a identificação pelo IP no Space (seção 4.3, CA24): ligar `identificar_por_ip` temporariamente, fazer os 4 testes e decidir | Decisão registrada: identificação ligada (comprovada) **ou** desligada, com a limitação anotada no `README.md`. |
+| P13 | Conferir os modelos (`scripts/conferir_modelos.py`, sem custo) e preparar o guia de publicação | Situação dos modelos registrada; `GUIA-publicacao.md` pronto. |
+| P14 | Preparar o Render: `render.yaml`, `.python-version` (3.11), `app.py` escutando em `0.0.0.0:PORT`, teste `tests/test_render.py` e guia atualizado. **Sem job "publicar" no GitHub Actions:** o Render publica sozinho com *After CI Checks Pass*. | Tudo pronto para você criar o serviço no Render (feito por você, com o guia). |
+| P15 | Criar o serviço no Render pelo guia, fazer o primeiro deploy da `main` e testar a identificação pelo IP no Render (seção 4.3, CA24): ligar `identificar_por_ip` temporariamente, fazer os 4 testes e decidir | App no ar no Render; decisão registrada: identificação ligada (comprovada) **ou** desligada, com a limitação anotada no `README.md`. |
 | P16 | Conferir todos os critérios de aceite (CA1 a CA25) | Parte 1 concluída. ✅ |
 
 ---
@@ -695,33 +698,33 @@ Cada passo é pequeno e termina com algo que dá para testar. Só passo para o p
 
 | Erro / sintoma | Causa provável | Solução |
 |---|---|---|
-| Space mostra **"Configuration error"** | Falta o cabeçalho YAML no topo do `README.md` ou ele está mal formatado | Conferir se o README começa com `---`, contém `sdk: gradio`, `sdk_version` e `app_file: app.py`, e fecha com `---`. |
-| Space mostra **"Runtime error"** / `ModuleNotFoundError` | Biblioteca faltando no `requirements.txt` | Adicionar a biblioteca ao `requirements.txt` e publicar de novo. |
-| App funciona no computador mas quebra no Space | Versão do Gradio diferente entre o README e o `requirements.txt` | Usar o mesmo número nos dois lugares; o teste T7 avisa antes de publicar. |
-| Chat responde sempre a mensagem amigável de erro | Nenhuma chave configurada no Space, ou o **primeiro** provedor com chave tem erro de chave, permissão ou cobrança (o fallback para nesses casos) | Ler os logs do Space: a linha "Erro de configuração" diz qual provedor e o que corrigir. Conferir *Settings → Secrets*; os nomes devem ser exatamente `OPENROUTER_API_KEY` etc. Depois, reiniciar o Space. |
-| Erro **401 / Unauthorized** nos logs | Chave errada, expirada ou revogada | Gerar uma nova chave no site do provedor e colar de novo. **O fallback não cobre esse erro**: enquanto não for corrigido, o chat não responde. Para usar outro provedor enquanto isso, apague a chave errada do Space (provedor sem chave é pulado) ou coloque `ativo: false` nele. |
+| Deploy no Render falha com **"No open ports detected"** | O app não está escutando em `0.0.0.0` na porta `PORT` | Conferir se o *Start Command* é `python app.py` (o `app.py` já lê a `PORT`). Nos *Logs*, deve aparecer "Abrindo o app em 0.0.0.0:…". |
+| Deploy no Render falha com `ModuleNotFoundError` | Biblioteca faltando no `requirements.txt` | Adicionar a biblioteca ao `requirements.txt` (o Render **não** instala o `requirements-dev.txt`) e publicar de novo. |
+| App funciona no computador mas quebra no Render | Python diferente (o padrão do Render é mais novo) ou versão de biblioteca diferente | Conferir nos *Logs* que o Render usou Python 3.11 (vem do `.python-version`) e que as versões vêm do `requirements.txt`. |
+| Chat responde sempre a mensagem amigável de erro | Nenhuma chave configurada no Render, ou o **primeiro** provedor com chave tem erro de chave, permissão ou cobrança (o fallback para nesses casos) | Ler os *Logs* do Render: a linha "Erro de configuração" diz qual provedor e o que corrigir. Conferir a aba *Environment*; os nomes devem ser exatamente `OPENROUTER_API_KEY` etc. Salvar reinicia o serviço. |
+| Erro **401 / Unauthorized** nos logs | Chave errada, expirada ou revogada | Gerar uma nova chave no site do provedor e colar de novo. **O fallback não cobre esse erro**: enquanto não for corrigido, o chat não responde. Para usar outro provedor enquanto isso, apague a chave errada do Render (provedor sem chave é pulado) ou coloque `ativo: false` nele. |
 | Erro de **cobrança** nos logs (402, ou 429 `insufficient_quota`, ou "credit balance is too low") | Conta do provedor sem saldo ou limite de gastos atingido | Adicionar créditos, aumentar o limite de gastos ou usar um modelo `:free` do OpenRouter. **O fallback não cobre esse erro**, de propósito, para você perceber o problema. Enquanto isso, dá para desligar o provedor com `ativo: false`. |
 | Erro **404 / model not found** | Nome do modelo errado ou modelo descontinuado | Conferir o nome exato no site do provedor e corrigir no `config.yml`. |
 | Erro **429 / rate limit** do provedor | Muitas perguntas em pouco tempo (comum em modelos gratuitos) | Esperar um pouco; o fallback passa para o próximo provedor (é uma falha temporária). Se for frequente, reduzir os `limites`. |
 | Muita gente vê "limite de uso de hoje atingido" | `perguntas_por_dia_total` baixo demais para o movimento | Aumentar o valor no `config.yml`, se o orçamento permitir. |
 | Várias pessoas da mesma escola ou empresa são bloqueadas juntas | Elas saem para a internet pelo **mesmo IP**, então contam como uma pessoa só | Aumentar `perguntas_por_minuto_por_pessoa` e `perguntas_por_dia_por_pessoa`. Limite conhecido desta versão simples. |
-| Todo mundo recebe o **mesmo** identificador nos logs | A identificação não está funcionando no Space (ex.: o Hugging Face mudou o jeito de preencher o `X-Forwarded-For`) | Colocar `identificar_por_ip: false` e registrar a limitação no `README.md`. Os limites globais continuam protegendo. |
+| Todo mundo recebe o **mesmo** identificador nos logs | A identificação não está funcionando no Render (ex.: há mais de um intermediário antes do app, e o último item do `X-Forwarded-For` não é o IP da pessoa) | Colocar `identificar_por_ip: false` e registrar a limitação no `README.md`. Os limites globais continuam protegendo. |
 | Logs mostram muitas pessoas "não identificadas" | O `X-Forwarded-For` não chegou ou chegou num formato inesperado | Conferir nos logs quantos itens a lista tinha. Se o problema for constante, desligar `identificar_por_ip`. |
 | Aviso "assistente muito movimentado" aparece com frequência | `perguntas_por_minuto_total` baixo demais para o movimento | Aumentar o valor no `config.yml`, se o orçamento permitir. |
-| Contadores de limite "zeraram" do nada | O Space reiniciou (os contadores ficam na memória) | Comportamento esperado. O limite de gastos no provedor continua protegendo. |
+| Contadores de limite "zeraram" do nada | O serviço do Render dormiu (15 minutos sem acesso) ou reiniciou; os contadores ficam na memória | Comportamento esperado. O limite de gastos no provedor continua protegendo. |
 | Conta do provedor gastou mais do que o esperado | Link muito usado, ou limites altos demais | Baixar os valores em `limites` e conferir o limite de gastos no painel do provedor. |
 | Validação reclama de **cor inválida** | Cor escrita como nome (`azul`) ou faltando dígitos | Usar o formato `#RRGGBB`, ex.: `#2563EB`. |
 | Validação reclama de **contraste baixo** | Cor clara demais no tema claro, ou escura demais no tema escuro | Seguir a sugestão da mensagem (cor mais escura ou mais clara). Sites de "contrast checker" ajudam a escolher. |
 | Cor que funcionava passou a ser recusada | O `tema` foi trocado (claro ↔ escuro) | Ajustar as cores para o novo fundo. |
 | Erro ao ler o YAML (`mapping values are not allowed`) | Indentação errada ou falta de aspas | Usar **2 espaços** (nunca TAB) e colocar textos com `:` ou `#` entre aspas. |
 | A logo não aparece | Caminho errado em `assistente.logo` | O caminho é relativo à raiz do projeto, ex.: `assets/logo.svg`. A validação já avisa se o arquivo não existir. |
-| Mudei o `config.yml` e nada mudou no link | Publicação ainda em andamento ou o navegador guardou a versão antiga | Esperar o Actions ficar verde e o Space terminar o *build*; recarregar com Ctrl+Shift+R. |
+| Mudei o `config.yml` e nada mudou no link | A mudança ainda não está na `main`, o GitHub Actions ainda não terminou, o deploy está em andamento, ou o navegador guardou a versão antiga | Conferir o merge na `main`, esperar o Actions ficar verde e o deploy do Render terminar; recarregar com Ctrl+Shift+R. |
 | Verificação de segurança acusa algo que não é uma chave real | Texto de exemplo no formato completo de uma chave | Trocar o exemplo por um texto claramente falso (ex.: `SUA_CHAVE_AQUI`). |
 | Chave apareceu no GitHub por engano | `.env` enviado ou chave colada em algum arquivo | **Revogar a chave imediatamente** no site do provedor e criar outra. Apagar o arquivo não basta, pois ela continua no histórico. |
-| GitHub Actions falha em **"publicar"** com 401/403 | `HF_TOKEN` ausente, errado ou só com permissão de leitura | Criar um token com permissão **Write** e atualizar o secret no GitHub. |
-| GitHub Actions falha com **"Space not found"** | `HF_SPACE_ID` digitado errado | Usar o formato `usuario/nome-do-space`, igual à URL do Space. |
+| O primeiro acesso demora cerca de 1 minuto | O plano gratuito do Render dorme após 15 minutos sem acesso | Comportamento esperado do plano gratuito. Basta esperar. |
+| Commit na `main` não gerou deploy no Render | O *Auto-Deploy* está em *After CI Checks Pass* e alguma verificação do GitHub falhou (ou nenhuma rodou) | Abrir a aba *Actions* do GitHub, corrigir o que falhou e fazer um novo commit. |
 | Job "publicar" nunca roda | O push não foi na `main`, ou algum teste falhou | Ver a aba **Actions**; corrigir o teste que falhou ou fazer o merge na `main`. |
-| Arquivo antigo continua no Space | Está fora das pastas do app (a publicação não mexe nele, por segurança) | Se não for mais necessário, apagá-lo à mão na aba *Files* do Space. |
+| Serviços grátis do Render pararam até o mês seguinte | Acabaram as 750 horas grátis do mês da sua conta | Esperar o mês seguinte ou reduzir outros serviços grátis da conta. |
 | Testes passam no seu computador mas falham no Actions | Versão de biblioteca ou de Python diferente | Instalar pelo `requirements.txt` e usar Python 3.11 nos dois lugares. |
 
 ---

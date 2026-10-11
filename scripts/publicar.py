@@ -1,4 +1,8 @@
-"""Envia o app para o Hugging Face Spaces, com regras de segurança (SPEC, seção 7.2).
+"""Envia o app para o Hugging Face Spaces, com regras de segurança.
+
+LEGADO: desde a Revisão 13 da SPEC, o app é publicado no Render, que busca o
+código direto do GitHub. Este script foi mantido (e continua testado), mas NÃO
+faz parte da publicação pelo Render.
 
 Como usar (na pasta do projeto):
     python scripts/publicar.py              # SIMULAÇÃO: só mostra o plano, não muda nada
