@@ -286,7 +286,7 @@ def test_recusa_nenhum_provedor_ativo(dados_validos):
 
 
 def test_recusa_provedor_repetido(dados_validos):
-    dados_validos["provedores"].append({"nome": "openrouter", "modelo": "outro-modelo"})
+    dados_validos["provedores"].append({"nome": "openrouter", "modelo": "outro/modelo:free"})
     assert "repetido" in um_problema_em(dados_validos, "provedores")
 
 

@@ -11,9 +11,13 @@ O que ele faz:
       chave, o modelo fica como "pendente".
     - Nunca mostra as chaves; em caso de erro, mostra só o tipo do erro.
 
+OpenRouter: confere o modelo principal E os modelos_reserva. Cada um precisa
+existir no catálogo oficial, ter TODOS os preços iguais a zero e gerar só texto
+(não pode ser classificador, moderação, embeddings...).
+
 Resultado:
-    - Código 0: nenhum modelo foi encontrado como inexistente.
-    - Código 1: algum modelo não existe (corrija o nome no config.yml).
+    - Código 0: tudo certo (ou pendente por falta de chave/internet).
+    - Código 1: algum modelo não existe ou não serve (pago ou não conversa).
 """
 
 import json
@@ -27,6 +31,7 @@ RAIZ_DO_PROJETO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ_DO_PROJETO))
 
 from assistente.config import ErroDeConfiguracao, carregar_configuracao
+from assistente.modelos_gratuitos import motivo_para_recusar_no_catalogo
 from assistente.provedores import VARIAVEIS_DE_CHAVE
 
 LISTA_PUBLICA_DO_OPENROUTER = "https://openrouter.ai/api/v1/models"
@@ -36,7 +41,7 @@ LISTA_PUBLICA_DO_OPENROUTER = "https://openrouter.ai/api/v1/models"
 class Resultado:
     provedor: str
     modelo: str
-    situacao: str  # "confirmado", "nao_encontrado", "pendente"
+    situacao: str  # "confirmado", "nao_encontrado", "inadequado", "pendente"
     detalhe: str = ""
 
 
@@ -78,9 +83,12 @@ def conferir_openrouter(modelo: str, baixar=baixar_lista_do_openrouter) -> Resul
         return Resultado("openrouter", modelo, "pendente", f"sem acesso à lista ({type(erro).__name__})")
     if modelo not in modelos:
         return Resultado("openrouter", modelo, "nao_encontrado", "não está na lista oficial")
-    preco = modelos[modelo].get("pricing", {})
-    gratuito = str(preco.get("prompt")) in {"0", "0.0"} and str(preco.get("completion")) in {"0", "0.0"}
-    return Resultado("openrouter", modelo, "confirmado", "gratuito" if gratuito else "ATENÇÃO: é pago")
+    motivo = motivo_para_recusar_no_catalogo(modelos[modelo])
+    if motivo is None:
+        return Resultado("openrouter", modelo, "confirmado", "gratuito, conversa em texto")
+    if motivo.startswith("não é gratuito"):
+        return Resultado("openrouter", modelo, "inadequado", "ATENÇÃO: é pago")
+    return Resultado("openrouter", modelo, "inadequado", f"ATENÇÃO: {motivo}")
 
 
 def conferir_com_chave(provedor: str, modelo: str, chave: str | None, consultar) -> Resultado:
@@ -102,16 +110,27 @@ def conferir(config, ambiente, consultas=None) -> list[Resultado]:
         "openai": existe_na_openai,
     }
     resultados = []
+    lista_do_openrouter = None
+
+    def baixar_uma_vez():
+        nonlocal lista_do_openrouter
+        if lista_do_openrouter is None:
+            lista_do_openrouter = consultas["openrouter"]()
+        return lista_do_openrouter
+
     for item in config.provedores_ativos:
         if item.nome == "openrouter":
-            resultados.append(conferir_openrouter(item.modelo, consultas["openrouter"]))
+            for modelo in (item.modelo, *item.modelos_reserva):
+                resultados.append(conferir_openrouter(modelo, baixar_uma_vez))
         else:
             chave = (ambiente.get(VARIAVEIS_DE_CHAVE[item.nome]) or "").strip() or None
             resultados.append(conferir_com_chave(item.nome, item.modelo, chave, consultas[item.nome]))
     return resultados
 
 
-SIMBOLOS = {"confirmado": "[OK]      ", "nao_encontrado": "[ERRO]    ", "pendente": "[PENDENTE]"}
+SIMBOLOS = {
+    "confirmado": "[OK]      ", "nao_encontrado": "[ERRO]    ", "inadequado": "[ERRO]    ", "pendente": "[PENDENTE]",
+}
 
 
 def main(ambiente=None, consultas=None, raiz: Path = RAIZ_DO_PROJETO) -> int:
@@ -131,8 +150,8 @@ def main(ambiente=None, consultas=None, raiz: Path = RAIZ_DO_PROJETO) -> int:
         detalhe = f" ({r.detalhe})" if r.detalhe else ""
         print(f"{SIMBOLOS[r.situacao]} {r.provedor}: {r.modelo}{detalhe}")
 
-    if any(r.situacao == "nao_encontrado" for r in resultados):
-        print("\nCorrija o nome do modelo no config.yml (confira no site do provedor).")
+    if any(r.situacao in ("nao_encontrado", "inadequado") for r in resultados):
+        print("\nCorrija o config.yml: troque os modelos marcados com [ERRO] (confira no site do provedor).")
         return 1
     if any(r.situacao == "pendente" for r in resultados):
         print("\nAlguns modelos ficaram pendentes: configure a chave no .env ou confira no site do provedor.")

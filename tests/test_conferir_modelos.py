@@ -50,12 +50,12 @@ def nao_encontrado(sdk):
 
 def test_openrouter_modelo_gratuito_confirmado():
     r = cm.conferir_openrouter("m:free", lista_openrouter(modelo_or("m:free")))
-    assert (r.situacao, r.detalhe) == ("confirmado", "gratuito")
+    assert (r.situacao, r.detalhe) == ("confirmado", "gratuito, conversa em texto")
 
 
 def test_openrouter_avisa_quando_o_modelo_e_pago():
     r = cm.conferir_openrouter("m", lista_openrouter(modelo_or("m", "0.000001", "0.000002")))
-    assert (r.situacao, r.detalhe) == ("confirmado", "ATENÇÃO: é pago")
+    assert (r.situacao, r.detalhe) == ("inadequado", "ATENÇÃO: é pago")  # pago agora é erro
 
 
 def test_openrouter_modelo_inexistente():
@@ -133,9 +133,12 @@ def test_modelo_inexistente_vira_false(monkeypatch, sdk, funcao):
 
 # ---------- Programa completo ----------
 
+MODELOS_DO_OPENROUTER = [CONFIG.provedores[0].modelo, *CONFIG.provedores[0].modelos_reserva]
+
+
 def consultas(openrouter=None, anthropic_existe=True, openai_existe=True):
     return {
-        "openrouter": openrouter or lista_openrouter(modelo_or(CONFIG.provedores[0].modelo)),
+        "openrouter": openrouter or lista_openrouter(*(modelo_or(m) for m in MODELOS_DO_OPENROUTER)),
         "anthropic": lambda m, c: anthropic_existe,
         "openai": lambda m, c: openai_existe,
     }
@@ -145,14 +148,14 @@ def test_tudo_confirmado(capsys):
     ambiente = {"ANTHROPIC_API_KEY": CHAVE_FALSA, "OPENAI_API_KEY": CHAVE_FALSA}
     assert cm.main(ambiente=ambiente, consultas=consultas()) == 0
     saida = capsys.readouterr().out
-    assert saida.count("[OK]") == 3
+    assert saida.count("[OK]") == len(MODELOS_DO_OPENROUTER) + 2  # principal e reservas do OpenRouter
     assert CHAVE_FALSA not in saida
 
 
 def test_modelo_inexistente_termina_com_erro(capsys):
     ambiente = {"ANTHROPIC_API_KEY": CHAVE_FALSA, "OPENAI_API_KEY": CHAVE_FALSA}
     assert cm.main(ambiente=ambiente, consultas=consultas(openai_existe=False)) == 1
-    assert "Corrija o nome do modelo" in capsys.readouterr().out
+    assert "Corrija o config.yml" in capsys.readouterr().out
 
 
 def test_sem_chaves_fica_pendente_mas_nao_falha(capsys):
@@ -160,3 +163,23 @@ def test_sem_chaves_fica_pendente_mas_nao_falha(capsys):
     saida = capsys.readouterr().out
     assert saida.count("[PENDENTE]") == 2
     assert "ficaram pendentes" in saida
+
+
+def test_reserva_do_openrouter_que_virou_paga_ou_classificador_e_erro(capsys):
+    itens = [modelo_or(m) for m in MODELOS_DO_OPENROUTER]
+    itens[1] = modelo_or(MODELOS_DO_OPENROUTER[1], completion="0.000001")
+    itens[2] = {**modelo_or(MODELOS_DO_OPENROUTER[2]), "name": "Exemplo Content Safety (free)"}
+    assert cm.main(ambiente={}, consultas=consultas(openrouter=lista_openrouter(*itens))) == 1
+    saida = capsys.readouterr().out
+    assert "ATENÇÃO: é pago" in saida and "não conversa" in saida
+
+
+def test_lista_do_openrouter_e_baixada_uma_vez_so():
+    chamadas = []
+
+    def baixar():
+        chamadas.append(1)
+        return [modelo_or(m) for m in MODELOS_DO_OPENROUTER]
+
+    cm.conferir(CONFIG, {}, consultas(openrouter=baixar))
+    assert len(chamadas) == 1
