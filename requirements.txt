@@ -1,0 +1,25 @@
+# Bibliotecas que o assistente precisa para funcionar.
+# O Hugging Face instala este arquivo automaticamente.
+#
+# ATENÇÃO: a versão do Gradio precisa ser IGUAL ao "sdk_version"
+# do cabeçalho do README.md. Para atualizar, mude os dois juntos.
+gradio==6.30.0
+
+# Lê o arquivo config.yml
+pyyaml==6.0.3
+
+# Confere se a configuração está correta
+pydantic==2.14.0
+
+# Conversa com a OpenAI e com o OpenRouter
+openai==3.28.0
+
+# Conversa com a Anthropic (Claude)
+anthropic==1.13.0
+
+# Lê as chaves do arquivo .env no seu computador
+python-dotenv==1.2.4
+
+# Tabela de fusos horários (o dia dos limites vira à meia-noite de Brasília).
+# Necessária no Windows e em servidores que não trazem essa tabela.
+tzdata==2026.5

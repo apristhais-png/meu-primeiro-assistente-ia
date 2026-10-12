@@ -1,0 +1,83 @@
+# =============================================================
+# CONFIGURAÇÃO DO ASSISTENTE
+# =============================================================
+# Personalize o assistente editando este arquivo. Não precisa mexer no código.
+#
+# Antes de enviar para o GitHub, confira se está tudo certo com:
+#     python scripts/validar_config.py      (disponível a partir do passo P5)
+#
+# Dicas de YAML:
+#   - Use 2 espaços para recuar as linhas (nunca TAB).
+#   - Coloque textos entre aspas, principalmente se tiverem ":" ou "#".
+#   - Tudo depois de "#" é comentário e é ignorado.
+#
+# IMPORTANTE: chaves de API NUNCA ficam aqui. Elas ficam no arquivo .env
+# (no seu computador) e nos Secrets do Hugging Face.
+# =============================================================
+
+
+# ---------- Identidade do assistente ----------
+assistente:
+  nome: "Professor de Dados"                 # até 60 caracteres
+  descricao: "Aprenda Engenharia de Dados e IA de forma simples."
+  logo: "assets/logo.svg"                    # caminho a partir da raiz do projeto
+  mensagem_boas_vindas: "Olá! O que você quer aprender hoje?"
+  exemplos_de_perguntas:
+    - "O que é um pipeline de dados?"
+    - "Qual a diferença entre ETL e ELT?"
+    - "O que é um modelo de linguagem?"
+
+
+# ---------- Aparência ----------
+# Cores no formato #RRGGBB. A validação confere se ficam legíveis
+# (regra de acessibilidade WCAG) e sugere outra cor se não ficarem.
+aparencia:
+  cor_primaria: "#2563EB"     # fundo dos botões, bordas e destaques
+  cor_secundaria: "#047857"   # links e textos destacados
+  tema: "claro"               # "claro" (fundo branco) ou "escuro" (fundo quase preto)
+
+
+# ---------- Como a IA deve se comportar ----------
+instrucoes: |
+  Você é um professor paciente de Engenharia de Dados e IA.
+  Explique com palavras simples, exemplos do dia a dia e passo a passo.
+  Responda sempre em português do Brasil.
+  Se não souber algo, diga que não sabe.
+
+
+# ---------- Ajustes das respostas ----------
+geracao:
+  temperatura: 0.5            # 0 = mais previsível, 1 = mais criativo
+  max_tokens: 1024            # tamanho máximo da resposta (também limita o custo)
+  timeout_segundos: 30        # tempo máximo de espera por provedor
+  max_mensagens_historico: 10 # quantas mensagens anteriores enviar para a IA
+
+
+# ---------- Proteção dos créditos ----------
+# Os limites são conferidos no servidor, antes de chamar a IA.
+limites:
+  # Limites GLOBAIS: valem sempre, somando todas as pessoas.
+  perguntas_por_minuto_total: 20
+  perguntas_por_dia_total: 500
+  tamanho_maximo_pergunta: 2000      # em caracteres
+
+  # Limites POR PESSOA: só valem se identificar_por_ip for true.
+  identificar_por_ip: false          # só mude para true depois do teste do critério CA24 (passo P16)
+  perguntas_por_minuto_por_pessoa: 5
+  perguntas_por_dia_por_pessoa: 50
+
+
+# ---------- Provedores de IA ----------
+# Na ordem de preferência: o primeiro é o principal; os outros entram
+# se ele falhar. Use "ativo: false" para desligar um provedor.
+# Confirme no site de cada provedor se o modelo continua disponível.
+provedores:
+  - nome: openrouter
+    modelo: "meta-llama/llama-3.3-70b-instruct:free"
+    ativo: true
+  - nome: anthropic
+    modelo: "claude-haiku-5-5"
+    ativo: true
+  - nome: openai
+    modelo: "gpt-4o-mini"
+    ativo: true

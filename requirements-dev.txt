@@ -1,0 +1,20 @@
+# Bibliotecas usadas SÓ para testar o projeto (não vão para o Hugging Face).
+# Instale junto com as do app:
+#   pip install -r requirements.txt -r requirements-dev.txt
+#
+# O Gradio NÃO fica aqui: a versão dele é definida só no requirements.txt.
+
+# Roda os testes automáticos
+pytest==9.1.1
+
+# Monta respostas e erros HTTP simulados nos testes dos provedores.
+# (As bibliotecas openai e anthropic já o instalam, mas os testes o usam
+# diretamente, então ele precisa estar declarado aqui.)
+httpx2==2.13.1
+
+# Envia o app para o Hugging Face (scripts/publicar.py). O Gradio já o instala,
+# mas o script o usa diretamente, então ele precisa estar declarado aqui.
+huggingface_hub==2.2.0
+
+# Verifica o estilo e erros comuns no código
+ruff==0.17.0

@@ -1,0 +1,34 @@
+# =============================================================
+# Arquivos que NUNCA devem ir para o GitHub
+# =============================================================
+
+# Chaves de API e segredos (o .env.example é só um modelo, pode ir)
+.env
+.env.*
+!.env.example
+
+# Ambientes virtuais do Python
+.venv/
+venv/
+env/
+
+# Arquivos temporários gerados pelo Python
+__pycache__/
+*.py[cod]
+
+# Arquivos temporários das ferramentas de teste e estilo
+.pytest_cache/
+.ruff_cache/
+
+# Arquivos temporários do Gradio
+.gradio/
+flagged/
+
+# Arquivos de log
+*.log
+
+# Arquivos do sistema operacional e de editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

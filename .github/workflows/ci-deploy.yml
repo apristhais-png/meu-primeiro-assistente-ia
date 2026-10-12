@@ -1,0 +1,72 @@
+# =============================================================
+# Robô do GitHub Actions (SPEC, seção 7)
+# =============================================================
+# Há só o job "testar". Quem publica é o Render (veja render.yaml): ele só
+# publica a main depois que este job passa ("After CI Checks Pass").
+#
+# Este job:
+#   - NÃO publica nada;
+#   - NÃO usa nenhum segredo (nem HF_TOKEN, nem chaves de IA);
+#   - NÃO chama IAs de verdade (os testes usam simulações e bloqueiam a rede).
+# Qualquer passo que falhar deixa o job vermelho.
+# =============================================================
+
+name: CI e publicação
+
+on:
+  pull_request:          # todo Pull Request (e cada push nele)
+  push:
+    branches: [main]     # todo push na main
+
+# Só leitura do repositório: este robô não pode alterar nada no GitHub.
+permissions:
+  contents: read
+
+# Se chegar um push novo no mesmo PR, cancela a rodada antiga (economiza tempo).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  testar:
+    name: testar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GRADIO_ANALYTICS_ENABLED: "False"
+      # Garante que nenhuma chave de IA exista durante os testes.
+      OPENROUTER_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Instalar Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Instalar as bibliotecas
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+          pip check
+
+      - name: Procurar chaves vazadas
+        run: python scripts/verificar_segredos.py
+
+      - name: Verificar estilo (Ruff)
+        run: ruff check .
+
+      - name: Validar o config.yml
+        run: python scripts/validar_config.py
+
+      - name: Rodar os testes (pytest)
+        run: pytest -v -rs
