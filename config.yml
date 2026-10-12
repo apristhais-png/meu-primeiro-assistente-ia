@@ -19,13 +19,20 @@
 # ---------- Identidade do assistente ----------
 assistente:
   nome: "Professor de Dados"                 # até 60 caracteres
-  descricao: "Aprenda Engenharia de Dados e IA de forma simples."
+  descricao: "Engenharia de Dados, Python, SQL e IA explicados de forma simples."
   logo: "assets/logo.svg"                    # caminho a partir da raiz do projeto
-  mensagem_boas_vindas: "Olá! O que você quer aprender hoje?"
+  # Aparece no meio da tela antes da primeira pergunta. Aceita Markdown
+  # (### para título, **negrito**).
+  mensagem_boas_vindas: |
+    ### Olá! Eu sou o Professor de Dados.
+    Explico **Engenharia de Dados, Python, SQL e IA** com palavras simples e exemplos práticos.
+    Escolha uma sugestão abaixo ou escreva a sua pergunta.
+  # Sugestões clicáveis da tela inicial (de preferência, uma por assunto).
   exemplos_de_perguntas:
-    - "O que é um pipeline de dados?"
-    - "Qual a diferença entre ETL e ELT?"
-    - "O que é um modelo de linguagem?"
+    - "O que é um pipeline de dados? Dê um exemplo do dia a dia."
+    - "Como ler um arquivo CSV com Python e pandas?"
+    - "No SQL, qual a diferença entre WHERE e HAVING?"
+    - "O que é um modelo de linguagem (LLM), em palavras simples?"
 
 
 # ---------- Aparência ----------

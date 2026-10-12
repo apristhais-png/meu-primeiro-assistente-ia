@@ -93,19 +93,76 @@ def js_do_tema(config: Configuracao) -> str:
     return f"() => {{ document.body.classList.toggle('dark', {escuro}); }}"
 
 
+# Texto de apoio (descrição, aviso do rodapé): cinza com contraste de pelo
+# menos 4,5 : 1 sobre o fundo de cada tema (conferido nos testes).
+TEXTO_SECUNDARIO = {"claro": "#52525B", "escuro": "#A1A1AA"}
+# Bordas discretas dos balões e da área do chat.
+BORDA_NEUTRA = {"claro": "#E4E4E7", "escuro": "#27272A"}
+
+
 def css_extra(config: Configuracao) -> str:
-    fundo = cores.FUNDOS[config.aparencia.tema]
+    """Estilo da tela. Só CSS: nada de bibliotecas extras (leve no Render grátis)."""
+    tema = config.aparencia.tema
+    fundo = cores.FUNDOS[tema]
+    primaria = config.aparencia.cor_primaria
     secundaria = config.aparencia.cor_secundaria
+    apoio = TEXTO_SECUNDARIO[tema]
+    borda = BORDA_NEUTRA[tema]
     return f"""
-    .cabecalho {{ display: flex; align-items: center; gap: 16px; padding: 8px 0; }}
-    .cabecalho img {{ width: 64px; height: 64px; flex-shrink: 0; }}
-    .cabecalho h1 {{ margin: 0; font-size: 1.6rem; }}
-    .cabecalho p {{ margin: 4px 0 0; opacity: 0.85; }}
+    /* ---------- Página: coluna central, sem rolagem para os lados ---------- */
+    .gradio-container {{ width: 100% !important; max-width: 920px !important; margin: 0 auto !important; }}
+    .gradio-container, .gradio-container * {{ min-width: 0; }}
+
+    /* ---------- Topo: logo, nome, descrição e "Nova conversa" ---------- */
+    .topo {{ align-items: center !important; gap: 12px !important; flex-wrap: nowrap !important;
+             padding: 4px 0 12px; border-bottom: 1px solid {borda}; }}
+    .cabecalho {{ display: flex; align-items: center; gap: 14px; }}
+    .cabecalho img {{ width: 48px; height: 48px; flex-shrink: 0; }}
+    .cabecalho h1 {{ margin: 0; font-size: 1.375rem; line-height: 1.25; }}
+    .cabecalho p {{ margin: 2px 0 0; color: {apoio}; font-size: 0.95rem; }}
+    #nova-conversa {{ min-height: 44px; white-space: nowrap; }}
+
+    /* ---------- Mensagens ---------- */
+    #conversa .message {{ font-size: 1rem; line-height: 1.65; overflow-wrap: anywhere; }}
+    #conversa .message.user {{ border: 1px solid {misturar(primaria, fundo, 0.40)} !important; }}
+    #conversa .message.bot {{ border: 1px solid {borda} !important; }}
     /* Links nas mensagens usam a cor secundária. */
     .message a, .message a:visited {{ color: {secundaria} !important; }}
     /* Balão da IA com o mesmo fundo da página: o contraste dos links foi
        validado contra esse fundo (SPEC 4.4). */
     .message.bot {{ background: {fundo} !important; }}
+    /* Código e tabelas largas rolam dentro do balão, nunca a página inteira. */
+    #conversa pre {{ max-width: 100%; overflow-x: auto; border-radius: 8px; }}
+    #conversa table {{ display: block; max-width: 100%; overflow-x: auto; }}
+    #conversa :is(th, td) {{ overflow-wrap: normal; word-break: normal; }}
+    #conversa .placeholder-content h3 {{ margin-bottom: 8px; }}
+    /* Enquanto a IA responde: três pontinhos + "Pensando...", sem o contador
+       técnico em inglês ("processing | 1.0s"). */
+    #conversa .progress-text {{ display: none !important; }}
+    #conversa .message.pending .message-content::after {{ content: "Pensando..."; margin-left: 10px; color: {apoio}; }}
+
+    /* ---------- Acessibilidade ---------- */
+    /* Foco bem visível para quem navega pelo teclado (cor primária: contraste
+       de pelo menos 3 : 1 com o fundo, conferido na validação das cores). */
+    .gradio-container :is(button, a, textarea, input, [tabindex]):focus-visible {{
+        outline: 3px solid {primaria} !important; outline-offset: 2px !important; }}
+    /* Botões de ícone (copiar, limpar...) com área de toque confortável. */
+    #conversa button.icon-button {{ min-width: 32px; min-height: 32px; }}
+    #conversa .example {{ min-height: 44px; }}
+    @media (prefers-reduced-motion: reduce) {{
+        .gradio-container * {{ animation: none !important; transition: none !important; }} }}
+
+    /* ---------- Rodapé ---------- */
+    .aviso {{ text-align: center; color: {apoio}; font-size: 0.85rem; margin: 0; }}
+
+    /* ---------- Celular ---------- */
+    @media (max-width: 640px) {{
+        .gradio-container {{ padding: 0 8px !important; }}
+        .cabecalho img {{ width: 40px; height: 40px; }}
+        .cabecalho h1 {{ font-size: 1.15rem; }}
+        .cabecalho p {{ display: none; }}
+        #nova-conversa {{ padding: 0 12px; }}
+    }}
     """
 
 
@@ -148,25 +205,74 @@ def criar_funcao_de_resposta(assistente: Assistente):
 
 # ---------- Tela ----------
 
+DICA_DA_CAIXA = "Escreva sua pergunta..."
+AVISO_DO_RODAPE = (
+    "As respostas são geradas por IA e podem conter erros. "
+    "Não compartilhe senhas nem dados pessoais."
+)
+
+
+def conversa_vazia():
+    """'Nova conversa': limpa a tela e o histórico guardado na sessão."""
+    return [], [], [], gr.update(value="", interactive=True)
+
+
+def aguardando_resposta(conversa: list) -> bool:
+    """True se a última mensagem é da pessoa, ou seja, a IA ainda está respondendo."""
+    if not conversa:
+        return False
+    ultima = conversa[-1]
+    papel = ultima.get("role") if isinstance(ultima, dict) else getattr(ultima, "role", None)
+    return papel == "user"
+
+
+def depois_de_mudar_a_conversa(conversa: list):
+    """Liga/desliga o 'Nova conversa' e devolve a dica da caixa de texto.
+
+    O Gradio apaga a dica (placeholder) da caixa ao enviar e não a devolve.
+    """
+    if aguardando_resposta(conversa):
+        return gr.update(interactive=False), gr.update()
+    return gr.update(interactive=True), gr.update(placeholder=DICA_DA_CAIXA)
+
+
 def criar_interface(
     config: Configuracao, assistente: Assistente, raiz: Path = RAIZ_DO_PROJETO
 ) -> gr.Blocks:
     """Monta a tela do chat. Para abrir: demo.launch(**opcoes_de_lancamento(config))."""
     dados = config.assistente
     with gr.Blocks(title=dados.nome, analytics_enabled=False) as demo:
-        gr.HTML(html_do_cabecalho(config, raiz))
+        with gr.Row(elem_classes="topo"):
+            gr.HTML(html_do_cabecalho(config, raiz))
+            nova_conversa = gr.Button(
+                "Nova conversa", variant="secondary", size="md",
+                scale=0, min_width=140, elem_id="nova-conversa",
+            )
         chat = gr.ChatInterface(
             fn=criar_funcao_de_resposta(assistente),
             chatbot=gr.Chatbot(
+                label="Conversa com o " + dados.nome,
                 placeholder=dados.mensagem_boas_vindas or None,
                 show_label=False,
-                height=520,
+                # A conversa ocupa a altura da tela, em qualquer aparelho.
+                height="calc(100dvh - 300px)",
+                min_height=360,
+                # Copiar cada mensagem ou a conversa toda. Sem "compartilhar",
+                # que enviaria a conversa para fora do app.
+                buttons=["copy", "copy_all"],
+                avatar_images=(None, str(raiz / dados.logo)) if dados.logo else None,
+                elem_id="conversa",
             ),
             textbox=gr.Textbox(
-                placeholder="Digite sua pergunta...",
+                label="Sua pergunta",  # lido por leitores de tela
+                placeholder=DICA_DA_CAIXA,
                 show_label=False,
+                lines=1,
+                max_lines=6,
+                submit_btn="Enviar",
                 # O limite real é conferido no servidor; isto só ajuda quem digita.
                 max_length=config.limites.tamanho_maximo_pergunta,
+                html_attributes=gr.InputHTMLAttributes(lang="pt-BR", enterkeyhint="send", autocomplete="off"),
             ),
             examples=dados.exemplos_de_perguntas or None,
             cache_examples=False,  # não chamar a IA ao abrir o app (sem custo)
@@ -174,8 +280,27 @@ def criar_interface(
             concurrency_limit=PERGUNTAS_AO_MESMO_TEMPO,
             api_name="chat",  # a API passa pelos mesmos limites da tela
             analytics_enabled=False,
+            show_progress="minimal",  # três pontinhos na conversa enquanto a IA responde
+        )
+        gr.HTML(f'<p class="aviso">{html.escape(AVISO_DO_RODAPE)}</p>')
+
+        # "Nova conversa" zera a tela e o histórico da sessão (o histórico
+        # que vai para a IA fica em chatbot_state). Não é uma API pública.
+        nova_conversa.click(
+            conversa_vazia, None,
+            [chat.chatbot, chat.chatbot_state, chat.chatbot_value, chat.textbox],
+            queue=False, api_visibility="private",
+        )
+        # Enquanto a IA responde, o botão fica desligado: uma resposta atrasada
+        # não pode trazer de volta a conversa que acabou de ser apagada.
+        # (A caixa de texto já fica bloqueada nesse tempo, o que impede
+        # perguntas duplicadas.)
+        chat.chatbot.change(
+            depois_de_mudar_a_conversa, chat.chatbot, [nova_conversa, chat.textbox],
+            queue=False, api_visibility="private",
         )
     demo.chat_interface = chat  # referência usada pelos testes
+    demo.nova_conversa = nova_conversa
     demo.queue(max_size=TAMANHO_DA_FILA)
     return demo
 
@@ -188,6 +313,9 @@ def opcoes_de_lancamento(config: Configuracao, raiz: Path = RAIZ_DO_PROJETO) -> 
         "js": js_do_tema(config),
         "ssr_mode": False,
         "show_error": False,  # a pessoa nunca vê detalhes técnicos de erros
+        # Rodapé só com o crédito do Gradio: sem "Use via API" e sem
+        # "Settings" (que permitiria trocar o tema e fugir das cores validadas).
+        "footer_links": ["gradio"],
     }
     if config.assistente.logo:
         opcoes["favicon_path"] = str(raiz / config.assistente.logo)

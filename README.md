@@ -34,6 +34,10 @@ qualquer pessoa pelo navegador.
 - É personalizado **só pelo arquivo `config.yml`**: nome, logo, cores,
   instruções, modelos e limites de uso.
 - Protege seus créditos com **limites de uso conferidos no servidor**.
+- Tela pensada para qualquer aparelho (computador, tablet e celular): sugestões
+  clicáveis na tela inicial, botão **Nova conversa**, aviso "Pensando..."
+  enquanto a IA responde, código e tabelas legíveis e navegação completa pelo
+  teclado, com foco bem visível.
 - Não guarda nenhuma chave de API no código.
 
 ## Como rodar no seu computador
