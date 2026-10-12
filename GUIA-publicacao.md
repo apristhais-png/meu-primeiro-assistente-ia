@@ -188,3 +188,44 @@ Com o app no ar, conferimos juntos o que só dá para ver no link público:
 Quando terminar cada etapa, me conte **só** o que foi feito (por exemplo:
 "limite de gastos definido no OpenRouter; conta no Render criada").
 **Nunca** envie as chaves no chat.
+
+## 8. Lentidão e falhas do modelo gratuito: como ler os logs
+
+São dois problemas diferentes:
+
+- **App "dormindo" (cold start):** no Render grátis, o serviço dorme após 15
+  minutos sem acesso, e o primeiro acesso depois disso demora cerca de 1 minuto
+  para **abrir a página**. Isso não depende da IA e só some num plano pago.
+- **Demora da IA:** com a página já aberta, o `openrouter/free` escolhe um modelo
+  gratuito diferente a cada pergunta. Alguns demoram, outros devolvem resposta
+  vazia. Os limites da conta gratuita do OpenRouter são **20 pedidos por minuto e
+  50 por dia** (1000 por dia depois de comprar pelo menos 10 créditos). Passou
+  disso, ele responde 429.
+
+O que o app faz com isso (`config.yml`, seção `geracao`):
+
+| Situação | O que acontece |
+|---|---|
+| Resposta demora mais que `timeout_segundos` (45 s) | Para de esperar e mostra: "O modelo gratuito está demorando mais que o normal..." |
+| Resposta vazia, erro 5xx ou de conexão | Tenta **mais uma vez** (no máximo `tentativas_por_provedor` = 2 chamadas), só se ainda houver tempo |
+| Erro 429 (muitos pedidos) | Não repete; mostra "O modelo gratuito recebeu muitas perguntas agora..." |
+| Chave, cobrança ou modelo inválido (401, 402, 403, 404) | Não repete nem troca de provedor |
+| Resposta cortada pelo tamanho | Mostra o que chegou e avisa que ficou incompleta |
+| Qualquer caso | A pergunta nunca espera mais que `tempo_maximo_total_segundos` (60 s) |
+
+Nos **Logs** do Render, cada pergunta tem um `id` curto que liga as linhas
+(nunca aparece o texto da pergunta, da resposta ou a chave):
+
+```
+pergunta_inicio id=3fa2c1d0
+ia_detalhes id=3fa2c1d0 provedor=openrouter modelo_servido=<modelo gratuito> fim=length tokens_saida=1024 raciocinio=sim
+ia_chamada id=3fa2c1d0 provedor=openrouter tentativa=1 resultado=resposta_vazia status=- duracao_ms=9800
+ia_chamada id=3fa2c1d0 provedor=openrouter tentativa=2 resultado=sucesso duracao_ms=6100
+pergunta_fim id=3fa2c1d0 resultado=sucesso provedor=openrouter total_ms=16950
+```
+
+- `modelo_servido`: qual modelo gratuito o roteador escolheu.
+- `fim=length` com `raciocinio=sim` e resposta vazia: o modelo gastou todo o
+  `max_tokens` "pensando" e não sobrou espaço para a resposta.
+- `resultado=tempo_esgotado`, `limite_de_uso` (429), `servidor` (5xx) ou
+  `resposta_vazia`: mostram por que a tentativa falhou.

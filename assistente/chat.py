@@ -17,24 +17,39 @@ Isolamento das conversas:
     diferentes nunca se misturam.
 """
 
+import logging
+import time
+import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
 
 from assistente.config import Configuracao
 from assistente.limites import MENSAGENS, Limitador
 from assistente.provedores import (
+    MENSAGEM_DEMORA,
+    MENSAGEM_MUITOS_PEDIDOS,
     MENSAGEM_SEM_RESPOSTA,
     Provedor,
     SemResposta,
     criar_provedores,
+    id_da_pergunta,
     responder_com_fallback,
 )
 
+logger = logging.getLogger("assistente.chat")
+
 MENSAGEM_PERGUNTA_VAZIA = "Escreva sua pergunta para começarmos."
+MENSAGEM_AGUARDE = "Aguarde a resposta da pergunta anterior antes de enviar outra."
 
 # Mensagens fixas do próprio assistente. Elas não são respostas da IA, então
 # saem do histórico, junto com a pergunta que as gerou.
-_MENSAGENS_DO_SISTEMA = {MENSAGEM_SEM_RESPOSTA, MENSAGEM_PERGUNTA_VAZIA}
+_MENSAGENS_DO_SISTEMA = {
+    MENSAGEM_SEM_RESPOSTA,
+    MENSAGEM_DEMORA,
+    MENSAGEM_MUITOS_PEDIDOS,
+    MENSAGEM_PERGUNTA_VAZIA,
+    MENSAGEM_AGUARDE,
+}
 _INICIOS_DE_AVISOS = tuple(texto.split("{")[0] for texto in MENSAGENS.values())
 
 
@@ -46,6 +61,7 @@ class Resultado:
     liberada: bool  # True se passou pelos limites e foi para o fallback
     motivo_do_bloqueio: str | None = None  # "pergunta_vazia", motivo do limite, ou None
     provedor: str | None = None  # quem respondeu, se alguém respondeu
+    situacao: str = "bloqueada"  # para o log: "sucesso", "falha:<tipo>" ou "bloqueada"
 
 
 # ---------- Histórico ----------
@@ -123,7 +139,26 @@ class Assistente:
         )
 
     def responder(self, pergunta: str, historico=None, cabecalhos=None) -> Resultado:
-        """Responde uma pergunta. "historico" é a conversa desta pessoa até agora."""
+        """Responde uma pergunta. "historico" é a conversa desta pessoa até agora.
+
+        Registra no log uma linha de início e uma de fim, com tempos e
+        resultado, ligadas por um id curto. Nunca registra o texto.
+        """
+        marca = id_da_pergunta.set(uuid.uuid4().hex[:8])
+        inicio = time.monotonic()
+        logger.info("pergunta_inicio id=%s", id_da_pergunta.get())
+        try:
+            resultado = self._responder(pergunta, historico, cabecalhos)
+            logger.info(
+                "pergunta_fim id=%s resultado=%s provedor=%s total_ms=%d",
+                id_da_pergunta.get(), resultado.situacao, resultado.provedor or "-",
+                round((time.monotonic() - inicio) * 1000),
+            )
+            return resultado
+        finally:
+            id_da_pergunta.reset(marca)
+
+    def _responder(self, pergunta: str, historico, cabecalhos) -> Resultado:
         pergunta = (pergunta or "").strip()
         if not pergunta:
             return Resultado(MENSAGEM_PERGUNTA_VAZIA, liberada=False, motivo_do_bloqueio="pergunta_vazia")
@@ -141,9 +176,17 @@ class Assistente:
         )
         mensagens.append({"role": "user", "content": pergunta})
 
-        # 3. Fallback entre os provedores, com as instruções do config.yml.
+        # 3. Fallback entre os provedores, com as instruções do config.yml,
+        #    dentro do tempo máximo total da pergunta.
+        geracao = self.config.geracao
         try:
-            resposta = responder_com_fallback(self.provedores, mensagens, self.config.instrucoes)
+            resposta = responder_com_fallback(
+                self.provedores, mensagens, self.config.instrucoes,
+                tempo_maximo_total=geracao.tempo_maximo_total_segundos,
+                timeout_por_tentativa=geracao.timeout_segundos,
+                tentativas_por_provedor=geracao.tentativas_por_provedor,
+            )
         except SemResposta as erro:
-            return Resultado(erro.mensagem_para_pessoa, liberada=True)
-        return Resultado(resposta.texto, liberada=True, provedor=resposta.provedor)
+            ultima = next((t.resultado for t in reversed(erro.tentativas) if t.resultado != "sem_chave"), "sem_provedor")
+            return Resultado(erro.mensagem_para_pessoa, liberada=True, situacao=f"falha:{ultima}")
+        return Resultado(resposta.texto, liberada=True, provedor=resposta.provedor, situacao="sucesso")
