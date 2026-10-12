@@ -73,7 +73,7 @@ limites:
 # Confirme no site de cada provedor se o modelo continua disponível.
 provedores:
   - nome: openrouter
-    modelo: "meta-llama/llama-3.3-70b-instruct:free"
+    modelo: "openrouter/free"            # roteador gratuito do OpenRouter (escolhe um modelo grátis)
     ativo: true
   - nome: anthropic
     modelo: "claude-haiku-5-5"

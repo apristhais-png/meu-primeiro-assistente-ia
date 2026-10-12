@@ -43,6 +43,7 @@
 > - **Revisão 12 (durante o P13):** `GUIA-publicacao.md` com o passo a passo para você e a situação dos modelos; `scripts/conferir_modelos.py` confere os modelos só consultando a lista de cada provedor (sem custo). Modelo da Anthropic confirmado na documentação oficial; OpenRouter e OpenAI ficaram pendentes (sites inacessíveis no ambiente de desenvolvimento).
 > - **Revisão 13 (P14 — mudança de hospedagem):** o Hugging Face Spaces passou a exigir plano pago para rodar Gradio, então a publicação passa a ser no **Render Free Web Service**. Novos `render.yaml` e `.python-version` (3.11); o `app.py` escuta em `0.0.0.0:PORT` no Render (e só em `127.0.0.1:7860` no seu computador). O Render publica sozinho a `main` depois que o GitHub Actions passa (*After CI Checks Pass*), então **não há job "publicar"** no GitHub Actions e não é preciso `HF_TOKEN` nem `HF_SPACE_ID`. `scripts/publicar.py` e o teste T9 ficam como **legado**, mantidos e passando. CA16 e CA17 foram substituídos por critérios do Render. A seção 7 foi reescrita.
 > - **Revisão 14 (P15 — auditoria):** o P15 virou uma **auditoria pré-publicação, sem publicar** (resultado em `AUDITORIA-pre-publicacao.md`). A criação do serviço no Render, o primeiro deploy e a decisão do CA24 passaram para o P16. Recomendação registrada: primeira publicação **só com a chave do OpenRouter (modelo gratuito)**, porque os contadores de limite zeram quando o Render grátis dorme.
+> - **Revisão 15 (P16 — correção do modelo):** no Render, o OpenRouter respondeu **erro 404** para `meta-llama/llama-3.3-70b-instruct:free` ("modelo não encontrado"). O `config.yml` passou a usar o roteador gratuito **`openrouter/free`** ([documentação oficial](https://openrouter.ai/openrouter/free)), que escolhe sozinho um modelo grátis disponível. Nada mais mudou: deploy, limites, interface e a ordem dos provedores são os mesmos.
 
 ---
 
@@ -227,7 +228,7 @@ limites:
 # Provedores, na ordem de preferência (o primeiro é o principal)
 provedores:
   - nome: openrouter
-    modelo: "meta-llama/llama-3.3-70b-instruct:free"
+    modelo: "openrouter/free"
     ativo: true
   - nome: anthropic
     modelo: "claude-haiku-5-5"

@@ -20,7 +20,7 @@ Render é você, seguindo os passos abaixo.
 | Provedor | Modelo no `config.yml` | Situação | Fonte |
 |---|---|---|---|
 | Anthropic | `claude-haiku-5-5` | ✅ **Confirmado** na documentação oficial. Aposentadoria prevista para não antes de 07/10/2027. | [platform.claude.com — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview) |
-| OpenRouter | `meta-llama/llama-3.3-70b-instruct:free` | ⏳ **Pendente.** A página oficial do modelo existe nos resultados de busca, mas o site do OpenRouter não abre no ambiente de desenvolvimento, então não foi possível confirmar se ele **continua disponível e gratuito hoje**. Modelos `:free` mudam com frequência. | [openrouter.ai — Llama 3.3 70B Instruct (free)](https://openrouter.ai/meta-llama/llama-3.3-70b-instruct:free) |
+| OpenRouter | `openrouter/free` | ✅ **Trocado no P16 (12/10/2026).** O modelo anterior, `meta-llama/llama-3.3-70b-instruct:free`, deu **erro 404** ("modelo não encontrado") no Render. O `openrouter/free` é o roteador gratuito do OpenRouter: ele escolhe sozinho um modelo grátis disponível, então não depende de um modelo específico continuar no ar. | [openrouter.ai — openrouter/free](https://openrouter.ai/openrouter/free) |
 | OpenAI | `gpt-4o-mini` | ⏳ **Pendente.** O site da OpenAI não abre no ambiente de desenvolvimento. Resultados de busca indicam que variantes do `gpt-4o-mini` (áudio, realtime, busca) têm datas de desligamento, mas **não** confirmam a situação do modelo base. | [OpenAI — Deprecations](https://developers.openai.com/api/docs/deprecations) |
 
 ### Como confirmar os pendentes, sem custo
@@ -34,7 +34,7 @@ Ele só **consulta a lista de modelos** de cada provedor; nenhuma pergunta é
 enviada à IA, então **nada é cobrado**. Exemplo de saída:
 
 ```
-[OK]       openrouter: meta-llama/llama-3.3-70b-instruct:free (gratuito)
+[OK]       openrouter: openrouter/free (gratuito)
 [OK]       anthropic: claude-haiku-5-5
 [PENDENTE] openai: gpt-4o-mini (sem OPENAI_API_KEY configurada)
 ```
