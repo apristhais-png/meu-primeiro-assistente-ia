@@ -25,11 +25,17 @@ from assistente import cores
 from assistente.chat import Assistente
 from assistente.config import RAIZ_DO_PROJETO, carregar_configuracao
 from assistente.interface import (
+    AVISO_DO_RODAPE,
+    DICA_DA_CAIXA,
     MENSAGEM_ERRO_INESPERADO,
+    TEXTO_SECUNDARIO,
+    aguardando_resposta,
+    conversa_vazia,
     criar_funcao_de_resposta,
     criar_interface,
     criar_tema,
     css_extra,
+    depois_de_mudar_a_conversa,
     html_do_cabecalho,
     js_do_tema,
     logo_como_data_uri,
@@ -231,6 +237,85 @@ def test_conversa_nao_e_salva_e_exemplos_nao_sao_pre_calculados():
     demo = criar_interface(CONFIG, Assistente(CONFIG, provedores=[IAEco()]))
     assert demo.chat_interface.save_history is False  # histórico salvo fica para outra etapa
     assert demo.chat_interface.cache_examples is False  # não chama a IA ao abrir (sem custo)
+
+
+# =============================================================
+# Experiência de uso (Módulo 2, Aula 1)
+# =============================================================
+
+@pytest.mark.parametrize("tema", ["claro", "escuro"])
+def test_texto_de_apoio_e_legivel_nos_dois_temas(tema):
+    assert cores.contraste(TEXTO_SECUNDARIO[tema], cores.FUNDOS[tema]) >= cores.MINIMO_TEXTO
+
+
+def test_css_tem_foco_visivel_com_a_cor_primaria_e_nao_esconde_rolagem():
+    css = css_extra(CONFIG)
+    assert f"outline: 3px solid {CONFIG.aparencia.cor_primaria} !important" in css
+    assert ":focus-visible" in css
+    # Código e tabelas rolam dentro do balão; a página não esconde o excesso.
+    assert "#conversa pre {" in css and "overflow-x: auto" in css
+    assert "overflow-x: hidden" not in css
+    assert "prefers-reduced-motion" in css
+    assert "@media (max-width: 640px)" in css
+
+
+def test_indicador_de_processamento_em_portugues():
+    css = css_extra(CONFIG)
+    assert "#conversa .progress-text { display: none !important; }" in css  # contador em inglês
+    assert 'content: "Pensando..."' in css
+
+
+def test_tela_tem_nova_conversa_rotulos_e_aviso():
+    demo = criar_interface(CONFIG, Assistente(CONFIG, provedores=[IAEco()]))
+    [chatbot] = componentes(demo, gr.Chatbot)
+    [caixa] = componentes(demo, gr.Textbox)
+    assert demo.nova_conversa.value == "Nova conversa"
+    assert caixa.label == "Sua pergunta"  # lido por leitores de tela
+    assert caixa.placeholder == DICA_DA_CAIXA
+    assert caixa.submit_btn == "Enviar"
+    # Sem o botão "compartilhar", que mandaria a conversa para fora do app.
+    assert "share" not in chatbot.buttons and "copy" in chatbot.buttons
+    htmls = " ".join(str(h.value) for h in componentes(demo, gr.HTML))
+    assert AVISO_DO_RODAPE in htmls
+
+
+def test_rodape_sem_use_via_api_e_sem_settings():
+    assert opcoes_de_lancamento(CONFIG)["footer_links"] == ["gradio"]
+
+
+def test_nova_conversa_zera_tela_historico_e_caixa():
+    tela, historico, valor, caixa = conversa_vazia()
+    assert tela == historico == valor == []
+    assert caixa["value"] == "" and caixa["interactive"] is True
+
+
+@pytest.mark.parametrize(
+    ("conversa", "aguardando"),
+    [
+        ([], False),
+        ([{"role": "user", "content": "Oi"}], True),
+        ([{"role": "user", "content": "Oi"}, {"role": "assistant", "content": "Olá"}], False),
+        ([SimpleNamespace(role="user", content="Oi")], True),
+    ],
+)
+def test_aguardando_resposta(conversa, aguardando):
+    assert aguardando_resposta(conversa) is aguardando
+
+
+def test_nova_conversa_fica_desligada_enquanto_a_ia_responde():
+    botao, caixa = depois_de_mudar_a_conversa([{"role": "user", "content": "Oi"}])
+    assert botao["interactive"] is False
+    assert "placeholder" not in caixa  # a caixa continua como o Gradio deixou (bloqueada)
+    botao, caixa = depois_de_mudar_a_conversa([{"role": "user", "content": "Oi"}, {"role": "assistant", "content": "Olá"}])
+    assert botao["interactive"] is True
+    assert caixa["placeholder"] == DICA_DA_CAIXA  # o Gradio apaga a dica ao enviar
+
+
+def test_so_o_chat_e_api_publica():
+    # "Nova conversa" e os ajustes da tela não viram API para quem está de fora.
+    with app_rodando() as app:
+        rotas = visitante(app.endereco).view_api(return_format="dict", print_info=False)["named_endpoints"]
+    assert list(rotas) == ["/chat"]
 
 
 # =============================================================
