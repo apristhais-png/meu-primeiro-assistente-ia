@@ -56,7 +56,9 @@ instrucoes: |
 geracao:
   temperatura: 0.5            # 0 = mais previsível, 1 = mais criativo
   max_tokens: 1024            # tamanho máximo da resposta (também limita o custo)
-  timeout_segundos: 30        # tempo máximo de espera por provedor
+  timeout_segundos: 45        # tempo máximo de espera de cada tentativa
+  tempo_maximo_total_segundos: 60  # espera máxima da pergunta inteira (tentativas + fallback)
+  tentativas_por_provedor: 2  # no máximo 2 chamadas ao último provedor, só em falhas rápidas
   max_mensagens_historico: 10 # quantas mensagens anteriores enviar para a IA
 
 

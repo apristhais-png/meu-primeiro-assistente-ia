@@ -17,12 +17,13 @@ import html
 import logging
 import mimetypes
 import os
+import threading
 from pathlib import Path
 
 import gradio as gr
 
 from assistente import cores
-from assistente.chat import Assistente
+from assistente.chat import MENSAGEM_AGUARDE, Assistente
 from assistente.config import RAIZ_DO_PROJETO, Configuracao
 
 logger = logging.getLogger("assistente.interface")
@@ -188,17 +189,36 @@ def html_do_cabecalho(config: Configuracao, raiz: Path = RAIZ_DO_PROJETO) -> str
 # ---------- Resposta ----------
 
 def criar_funcao_de_resposta(assistente: Assistente):
-    """Função chamada pelo Gradio a cada pergunta."""
+    """Função chamada pelo Gradio a cada pergunta.
+
+    Uma sessão (aba do navegador ou cliente da API) só tem uma pergunta em
+    andamento por vez. A tela já bloqueia a caixa de texto enquanto a IA
+    responde; esta trava vale também para quem usa a API diretamente, e
+    evita chamadas duplicadas à IA.
+    """
+    em_andamento: set[str] = set()
+    trava = threading.Lock()
 
     def responder(mensagem: str, historico: list, request: gr.Request = None) -> str:
         # Os cabeçalhos do pedido vão para os limites (identificação pelo IP).
         cabecalhos = request.headers if request is not None else None
+        sessao = getattr(request, "session_hash", None) if request is not None else None
+        if sessao:
+            with trava:
+                if sessao in em_andamento:
+                    logger.info("Pergunta repetida recusada: a anterior desta sessão ainda está em andamento.")
+                    return MENSAGEM_AGUARDE
+                em_andamento.add(sessao)
         try:
             return assistente.responder(mensagem, historico, cabecalhos).texto
         except Exception as erro:  # noqa: BLE001 - a pessoa nunca deve ver um erro técnico
             # Só o tipo do erro vai para o log: nada de pergunta, resposta ou chave.
             logger.error("Erro inesperado ao responder (%s).", type(erro).__name__)
             return MENSAGEM_ERRO_INESPERADO
+        finally:
+            if sessao:
+                with trava:
+                    em_andamento.discard(sessao)
 
     return responder
 

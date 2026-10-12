@@ -97,6 +97,18 @@ class Geracao(_Secao):
     max_tokens: int = Field(ge=1, le=4000)
     timeout_segundos: float = Field(ge=5, le=120)
     max_mensagens_historico: int = Field(ge=1, le=50)
+    # Espera máxima de uma pergunta, somando tentativas, esperas e fallback.
+    tempo_maximo_total_segundos: float = Field(default=60, ge=10, le=180)
+    # Quantas vezes o último provedor disponível pode ser chamado por pergunta.
+    tentativas_por_provedor: int = Field(default=2, ge=1, le=3)
+
+    @model_validator(mode="after")
+    def tempo_total_cobre_uma_tentativa(self) -> "Geracao":
+        if self.tempo_maximo_total_segundos < self.timeout_segundos:
+            raise ValueError(
+                "tempo_maximo_total_segundos precisa ser maior ou igual a timeout_segundos"
+            )
+        return self
 
 
 class Limites(_Secao):
