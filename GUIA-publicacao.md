@@ -211,7 +211,15 @@ O que o app faz com isso (`config.yml`, seção `geracao`):
 | Erro 429 (muitos pedidos) | Não repete; mostra "O modelo gratuito recebeu muitas perguntas agora..." |
 | Chave, cobrança ou modelo inválido (401, 402, 403, 404) | Não repete nem troca de provedor |
 | Resposta cortada pelo tamanho | Mostra o que chegou e avisa que ficou incompleta |
+| Muitas perguntas lentas ao mesmo tempo | No máximo **4 chamadas à IA** existem ao mesmo tempo no app (contando as canceladas que ainda estão terminando). Sem vaga, a pessoa vê "Muitas perguntas estão sendo respondidas agora..." e nenhuma chamada nova é criada |
 | Qualquer caso | A pergunta nunca espera mais que `tempo_maximo_total_segundos` (60 s) |
+
+**Cancelamento:** quando o prazo acaba, o app fecha a conexão daquela
+tentativa. Se o provedor ainda estava mandando dados (sinais de "ainda
+processando"), a chamada para na hora. Se estava em silêncio total, ela para
+no limite de leitura da tentativa (no máximo `timeout_segundos`, 45 s).
+Enquanto isso, ela continua ocupando uma das 4 vagas; por isso as chamadas
+abandonadas nunca se acumulam.
 
 Nos **Logs** do Render, cada pergunta tem um `id` curto que liga as linhas
 (nunca aparece o texto da pergunta, da resposta ou a chave):

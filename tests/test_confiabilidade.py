@@ -11,6 +11,7 @@ import logging
 import socket
 import threading
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -26,11 +27,13 @@ from assistente.limites import Limitador
 from assistente.provedores import (
     MENSAGEM_DEMORA,
     MENSAGEM_MUITOS_PEDIDOS,
+    MENSAGEM_OCUPADO,
     MENSAGEM_SEM_RESPOSTA,
     NOTA_RESPOSTA_INCOMPLETA,
     FalhaDoProvedor,
     ProvedorCompativelComOpenAI,
     SemResposta,
+    chamadas_em_andamento,
     criar_provedores,
     responder_com_fallback,
 )
@@ -44,15 +47,23 @@ MENSAGENS = [{"role": "user", "content": PERGUNTA_SECRETA}]
 REQUISICAO = httpx2.Request("POST", "https://exemplo.invalid/v1")
 
 
+LOCAIS = {"127.0.0.1", "localhost"}
+
+
 @pytest.fixture(autouse=True)
 def rapido_e_sem_rede(monkeypatch):
-    """Sem internet; esperas encurtadas para os testes rodarem em segundos."""
+    """Sem internet (só o próprio computador); esperas encurtadas para os testes rodarem em segundos."""
+    conectar_original = socket.socket.connect
 
-    def proibido(*args, **kwargs):
-        raise RuntimeError("Acesso à rede bloqueado nos testes")
+    def so_local(sock, endereco):
+        host = endereco[0] if isinstance(endereco, tuple) else endereco
+        if host not in LOCAIS:
+            raise RuntimeError("Acesso à rede bloqueado nos testes")
+        return conectar_original(sock, endereco)
 
-    monkeypatch.setattr(socket.socket, "connect", proibido)
-    monkeypatch.setattr(socket, "create_connection", proibido)
+    monkeypatch.setattr(socket.socket, "connect", so_local)
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    monkeypatch.setenv("no_proxy", "127.0.0.1,localhost")
     monkeypatch.setattr(modulo, "ESPERA_ANTES_DE_REPETIR", 0.05)
     monkeypatch.setattr(modulo, "TEMPO_MINIMO_POR_TENTATIVA", 0.2)
 
@@ -276,13 +287,16 @@ def test_so_com_a_chave_do_openrouter_nenhum_provedor_pago_e_chamado():
     lista = criar_provedores(CONFIG, {"OPENROUTER_API_KEY": CHAVE_FALSA})
     clientes = {}
     for provedor in lista:
-        clientes[provedor.nome] = provedor._cliente = MagicMock()
+        # Caminho real: um cliente novo por tentativa (aqui, um simulado).
+        clientes[provedor.nome] = MagicMock()
+        provedor._criar_cliente = lambda c=clientes[provedor.nome]: c
     clientes["openrouter"].chat.completions.create.side_effect = [erro_http(503), erro_http(503)]
 
     with pytest.raises(SemResposta) as erro:
         com_prazo(lista)
 
     assert clientes["openrouter"].chat.completions.create.call_count == 2
+    assert clientes["openrouter"].close.call_count == 2  # cada tentativa fecha o próprio cliente
     clientes["anthropic"].messages.create.assert_not_called()
     clientes["openai"].chat.completions.create.assert_not_called()
     assert [t.resultado for t in erro.value.tentativas] == ["servidor", "servidor", "sem_chave", "sem_chave"]
@@ -407,3 +421,223 @@ def test_logs_tem_tempos_e_resultado_mas_nunca_conteudo_nem_chave(caplog):
     assert len(ids) == 1
     for proibido in (PERGUNTA_SECRETA, "resposta-secreta-456", CHAVE_FALSA, INSTRUCOES):
         assert proibido not in logs
+
+
+# =============================================================
+# Cancelamento e teto de chamadas simultâneas (revisão do PR #5)
+# =============================================================
+
+def esperar_ate(condicao, segundos=5.0):
+    limite = time.monotonic() + segundos
+    while time.monotonic() < limite:
+        if condicao():
+            return True
+        time.sleep(0.02)
+    return condicao()
+
+
+def linhas_de_chamada():
+    return sum(1 for linha in threading.enumerate() if linha.name == "chamada-ia")
+
+
+@pytest.fixture
+def teto(monkeypatch):
+    """Troca o teto de chamadas simultâneas por um valor pequeno."""
+
+    def aplicar(maximo):
+        # Chamadas de testes anteriores que ignoram o cancelamento (IALenta)
+        # ainda ocupam vagas por alguns segundos: é o teto funcionando.
+        assert esperar_ate(lambda: chamadas_em_andamento() == 0, 5.0)
+        monkeypatch.setattr(modulo, "MAX_CHAMADAS_SIMULTANEAS", maximo)
+        monkeypatch.setattr(modulo, "_vagas", threading.BoundedSemaphore(maximo))
+
+    yield aplicar
+    assert esperar_ate(lambda: chamadas_em_andamento() == 0), "chamadas ficaram presas"
+
+
+class IACancelavel:
+    """IA simulada lenta que obedece ao cancelamento (como o cliente HTTP fechado)."""
+
+    nome = "openrouter"
+    disponivel = True
+    aceita_cancelamento = True
+
+    def __init__(self, segundos=5.0, obedece=True):
+        self.segundos = segundos
+        self.obedece = obedece
+        self.chamadas = 0
+        self.canceladas = 0
+        self.ativas = 0
+        self.maximo_de_ativas = 0
+        self.trava = threading.Lock()
+
+    def responder(self, mensagens, instrucoes, prazo=None, ao_iniciar=None):
+        sinal = threading.Event()
+        if ao_iniciar is not None and self.obedece:
+            ao_iniciar(sinal.set)
+        with self.trava:
+            self.chamadas += 1
+            self.ativas += 1
+            self.maximo_de_ativas = max(self.maximo_de_ativas, self.ativas)
+        try:
+            if sinal.wait(self.segundos):
+                with self.trava:
+                    self.canceladas += 1
+                raise FalhaDoProvedor(self.nome, "conexao")
+            return "resposta tardia"
+        finally:
+            with self.trava:
+                self.ativas -= 1
+
+
+def test_varias_perguntas_lentas_ao_mesmo_tempo_respeitam_o_teto(teto):
+    teto(3)
+    ia = IACancelavel(segundos=10)
+    resultados = []
+    trava = threading.Lock()
+
+    def perguntar():
+        try:
+            com_prazo([ia], total=0.8)
+        except SemResposta as erro:
+            with trava:
+                resultados.append(erro.mensagem_para_pessoa)
+
+    inicio = time.monotonic()
+    pessoas = [threading.Thread(target=perguntar) for _ in range(10)]
+    for pessoa in pessoas:
+        pessoa.start()
+    for pessoa in pessoas:
+        pessoa.join(5)
+
+    assert time.monotonic() - inicio < 2.0  # ninguém esperou os 10 s da IA
+    assert len(resultados) == 10
+    assert ia.maximo_de_ativas <= 3  # nunca mais que o teto ao mesmo tempo
+    assert ia.chamadas <= 3  # sem vaga, nenhuma chamada nova foi criada
+    assert set(resultados) <= {MENSAGEM_DEMORA, MENSAGEM_OCUPADO}
+    assert MENSAGEM_OCUPADO in resultados
+    # As chamadas canceladas terminam logo, e as vagas voltam.
+    assert esperar_ate(lambda: chamadas_em_andamento() == 0, 2.0)
+    assert ia.canceladas == ia.chamadas
+
+
+def test_timeouts_seguidos_nao_acumulam_linhas_de_execucao(teto):
+    teto(2)
+    ia = IACancelavel(segundos=10)
+    antes = linhas_de_chamada()
+    for _ in range(15):
+        with pytest.raises(SemResposta) as erro:
+            com_prazo([ia], total=0.4)
+        assert erro.value.mensagem_para_pessoa == MENSAGEM_DEMORA
+        assert linhas_de_chamada() - antes <= 2  # nunca passa do teto
+    assert esperar_ate(lambda: linhas_de_chamada() == antes, 2.0)
+    assert ia.chamadas == 15 and ia.canceladas == 15  # todas canceladas de verdade
+
+
+def test_ia_que_ignora_o_cancelamento_ocupa_a_vaga_ate_terminar_e_nada_novo_e_criado(teto):
+    teto(2)
+    ia = IACancelavel(segundos=3.0, obedece=False)
+    respostas = []
+    for _ in range(5):
+        with pytest.raises(SemResposta) as erro:
+            com_prazo([ia], total=0.5)
+        respostas.append(erro.value.mensagem_para_pessoa)
+        assert chamadas_em_andamento() <= 2
+    # As duas primeiras ficaram presas (até 3 s); as outras nem começaram.
+    assert ia.chamadas == 2
+    assert respostas[:2] == [MENSAGEM_DEMORA, MENSAGEM_DEMORA]
+    assert set(respostas[2:]) == {MENSAGEM_OCUPADO}
+    # Quando terminam sozinhas, as vagas voltam e novas perguntas são atendidas.
+    assert esperar_ate(lambda: chamadas_em_andamento() == 0, 4.0)
+
+
+def test_aviso_de_ocupado_nao_vai_para_a_ia_no_historico():
+    ia = IAFalsa("ok")
+    chat = Assistente(CONFIG, provedores=[ia], limitador=Limitador(CONFIG.limites))
+    historico = [{"role": "user", "content": "Pergunta 1"}, {"role": "assistant", "content": MENSAGEM_OCUPADO}]
+    chat.responder("Pergunta 2", historico)
+    assert ia.recebido[-1] == [{"role": "user", "content": "Pergunta 2"}]
+
+
+def test_sem_vaga_nao_tenta_outro_provedor(teto):
+    teto(1)
+    presa = IACancelavel(segundos=1.0, obedece=False)
+    with pytest.raises(SemResposta):
+        com_prazo([presa], total=0.3)
+    segundo = openrouter(resposta_openrouter("não deveria ser chamado"), nome="openai")
+    with pytest.raises(SemResposta) as erro:
+        com_prazo([IACancelavel(), segundo], total=0.4)
+    assert [t.resultado for t in erro.value.tentativas] == ["sem_vaga"]
+    segundo.criar.assert_not_called()
+
+
+# ---------- Cliente real da biblioteca openai, com um servidor no próprio computador ----------
+
+class _ServidorLento(BaseHTTPRequestHandler):
+    """Responde 200 e fica 3 s sem terminar: mandando espaços ('ainda processando') ou em silêncio."""
+
+    protocol_version = "HTTP/1.1"
+    manda_sinais = True
+
+    def log_message(self, *args):
+        pass
+
+    def do_POST(self):
+        self.rfile.read(int(self.headers["Content-Length"]))
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Transfer-Encoding", "chunked")
+        self.end_headers()
+        try:
+            for _ in range(15):
+                if self.manda_sinais:
+                    self.wfile.write(b"1\r\n \r\n")
+                    self.wfile.flush()
+                time.sleep(0.2)
+        except OSError:
+            pass  # o app fechou a conexão (cancelou)
+
+
+@pytest.fixture
+def servidor_lento():
+    servidores = []
+
+    def abrir(manda_sinais):
+        tratador = type("Tratador", (_ServidorLento,), {"manda_sinais": manda_sinais})
+        servidor = ThreadingHTTPServer(("127.0.0.1", 0), tratador)
+        servidor.daemon_threads = True
+        threading.Thread(target=servidor.serve_forever, daemon=True).start()
+        servidores.append(servidor)
+        return f"http://127.0.0.1:{servidor.server_port}/v1"
+
+    yield abrir
+    for servidor in servidores:
+        servidor.shutdown()
+        servidor.server_close()
+
+
+def provedor_real(endereco):
+    return ProvedorCompativelComOpenAI("openrouter", "openrouter/free", CHAVE_FALSA, GERACAO, endereco=endereco)
+
+
+def test_cancelamento_efetivo_quando_o_provedor_manda_sinais_de_processando(servidor_lento):
+    # O caso dos 48 s: o provedor mantém a conexão viva. Fechar o cliente da
+    # tentativa derruba a conexão e a chamada termina logo depois do prazo.
+    provedor = provedor_real(servidor_lento(manda_sinais=True))
+    inicio = time.monotonic()
+    with pytest.raises(SemResposta) as erro:
+        com_prazo([provedor], total=1.0, por_tentativa=1.0)
+    assert time.monotonic() - inicio < 1.6
+    assert erro.value.mensagem_para_pessoa == MENSAGEM_DEMORA
+    assert esperar_ate(lambda: chamadas_em_andamento() == 0, 1.0)  # a chamada morreu de verdade
+
+
+def test_provedor_em_silencio_termina_no_limite_de_leitura_da_tentativa(servidor_lento):
+    # Em silêncio total, fechar não acorda a leitura bloqueada: ela acaba no
+    # limite de leitura da tentativa (aqui 1 s), nunca depois disso.
+    provedor = provedor_real(servidor_lento(manda_sinais=False))
+    inicio = time.monotonic()
+    with pytest.raises(SemResposta):
+        com_prazo([provedor], total=1.0, por_tentativa=1.0)
+    assert time.monotonic() - inicio < 1.6
+    assert esperar_ate(lambda: chamadas_em_andamento() == 0, 2.0)

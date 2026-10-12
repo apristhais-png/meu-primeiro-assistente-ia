@@ -28,6 +28,7 @@ from assistente.limites import MENSAGENS, Limitador
 from assistente.provedores import (
     MENSAGEM_DEMORA,
     MENSAGEM_MUITOS_PEDIDOS,
+    MENSAGEM_OCUPADO,
     MENSAGEM_SEM_RESPOSTA,
     Provedor,
     SemResposta,
@@ -47,6 +48,7 @@ _MENSAGENS_DO_SISTEMA = {
     MENSAGEM_SEM_RESPOSTA,
     MENSAGEM_DEMORA,
     MENSAGEM_MUITOS_PEDIDOS,
+    MENSAGEM_OCUPADO,
     MENSAGEM_PERGUNTA_VAZIA,
     MENSAGEM_AGUARDE,
 }
