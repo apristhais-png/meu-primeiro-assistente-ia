@@ -188,3 +188,33 @@ Com o app no ar, conferimos juntos o que só dá para ver no link público:
 Quando terminar cada etapa, me conte **só** o que foi feito (por exemplo:
 "limite de gastos definido no OpenRouter; conta no Render criada").
 **Nunca** envie as chaves no chat.
+
+## 7. Se um deploy falhar com "Port scan timeout"
+
+Mensagem no Render: `Port scan timeout reached, no open ports detected` e
+`Timed Out`. Significa que o Render esperou o app abrir a porta e desistiu.
+Quando isso acontece, **a versão anterior continua no ar** (nada quebra para
+quem está usando).
+
+**Diagnóstico feito em 12/10/2026 (deploy do PR #2):**
+- O código do deploy que falhou é **igual** ao da versão que está no ar; só
+  mudaram o `config.yml` (nome do modelo) e documentos. O GitHub Actions passou.
+- Simulação do Render (Python 3.11, só o `requirements.txt`, `PORT=10000`):
+  o app abre a porta em **cerca de 5 segundos**, usando **5 segundos de CPU** e
+  **cerca de 190 MB** de memória, e **não faz nenhuma conexão externa** ao iniciar.
+  Mesmo com a CPU bem mais fraca do plano grátis, isso fica muito abaixo do
+  tempo de espera do Render.
+- O app escuta em `0.0.0.0` na porta `PORT`, e a mensagem
+  `* Running on local URL: http://0.0.0.0:...` sai na hora nos logs.
+- Conclusão: **não foi encontrada causa no código**. A hipótese mais provável é
+  uma falha temporária do Render ao iniciar a instância nova (nos logs, o
+  `python app.py` só aparece depois do tempo esgotado).
+
+**O que fazer:**
+1. No serviço do Render: **Manual Deploy** → **Deploy latest commit**.
+2. Acompanhe a aba **Logs**. Um deploy bom mostra, em sequência:
+   `Provedores com chave configurada: openrouter`,
+   `Abrindo o app em 0.0.0.0:10000` e `* Running on local URL: http://0.0.0.0:10000`.
+3. Se falhar de novo: **Manual Deploy** → **Clear build cache & deploy**.
+4. Se ainda falhar, copie as **últimas linhas da aba Logs** (elas não têm
+   chaves) e me envie, junto com o horário em que o `python app.py` aparece.
