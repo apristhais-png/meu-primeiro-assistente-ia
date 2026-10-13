@@ -56,6 +56,14 @@ import anthropic
 import openai
 
 from assistente.config import Configuracao, Geracao
+from assistente.modelos_gratuitos import (
+    PRECO_MAXIMO_ZERO,
+    CatalogoOpenRouter,
+    Quarentena,
+    motivo_para_recusar_id,
+    nao_conversa,
+    parece_classificacao,
+)
 
 logger = logging.getLogger("assistente.provedores")
 
@@ -80,12 +88,15 @@ MENSAGEM_MUITOS_PEDIDOS = (
 MENSAGEM_OCUPADO = (
     "Muitas perguntas estão sendo respondidas agora. Tente novamente em instantes."
 )
+MENSAGEM_SEM_MODELO = (
+    "Nenhum modelo gratuito adequado está disponível agora. Tente novamente mais tarde."
+)
 # Acrescentada ao fim de uma resposta cortada pelo limite de tamanho.
 NOTA_RESPOSTA_INCOMPLETA = "\n\n_(A resposta ficou incompleta. Peça para eu continuar.)_"
 
 # Falhas que justificam tentar de novo o MESMO provedor (são rápidas e,
 # no openrouter/free, a nova tentativa costuma ir para outro modelo gratuito).
-FALHAS_QUE_PERMITEM_REPETIR = {"conexao", "servidor", "resposta_vazia"}
+FALHAS_QUE_PERMITEM_REPETIR = {"conexao", "servidor", "resposta_vazia", "resposta_inadequada"}
 ESPERA_ANTES_DE_REPETIR = 1.0  # segundos
 TEMPO_MINIMO_POR_TENTATIVA = 5.0  # com menos que isso, não vale começar outra chamada
 
@@ -102,7 +113,10 @@ _trava_do_contador = threading.Lock()
 id_da_pergunta: contextvars.ContextVar[str] = contextvars.ContextVar("id_da_pergunta", default="-")
 
 # Tipos de falha e se permitem tentar o próximo provedor.
-FALHAS_TEMPORARIAS = {"tempo_esgotado", "conexao", "limite_de_uso", "servidor", "resposta_vazia", "sem_vaga"}
+FALHAS_TEMPORARIAS = {
+    "tempo_esgotado", "conexao", "limite_de_uso", "servidor", "resposta_vazia",
+    "resposta_inadequada", "sem_vaga", "sem_modelo_adequado",
+}
 FALHAS_QUE_PARAM = {"autenticacao", "permissao", "cobranca", "requisicao_invalida", "inesperada"}
 
 # Trechos que indicam problema de cobrança/créditos no corpo do erro.
@@ -123,6 +137,8 @@ _EXPLICACOES = {
     "servidor": "o servidor do provedor está com problemas",
     "resposta_vazia": "o provedor devolveu uma resposta vazia",
     "sem_vaga": "o app já está com o máximo de chamadas à IA ao mesmo tempo",
+    "resposta_inadequada": "o modelo devolveu uma classificação em vez de uma explicação",
+    "sem_modelo_adequado": "nenhum modelo gratuito de conversa da lista está disponível no catálogo",
     "autenticacao": "a chave de API foi recusada. Confira se ela está certa e sem espaços",
     "permissao": "a chave não tem permissão para usar este modelo",
     "cobranca": "a conta do provedor está sem créditos ou atingiu o limite de gastos",
@@ -157,8 +173,15 @@ class Resposta:
 
 
 def _mensagem_para_pessoa(tentativas: list[Tentativa], erro_de_configuracao: bool) -> str:
-    """Mensagem curta, sem detalhes técnicos. Específica só quando todas as falhas foram iguais."""
-    tipos = {t.resultado for t in tentativas if t.resultado != "sem_chave"}
+    """Mensagem curta, sem detalhes técnicos.
+
+    Específica quando a última tentativa mostrou que não sobrou modelo adequado,
+    ou quando todas as falhas foram do mesmo tipo.
+    """
+    resultados = [t.resultado for t in tentativas if t.resultado != "sem_chave"]
+    tipos = set(resultados)
+    if not erro_de_configuracao and resultados and resultados[-1] == "sem_modelo_adequado":
+        return MENSAGEM_SEM_MODELO  # a situação atual é: não sobrou modelo adequado
     if not erro_de_configuracao and tipos == {"tempo_esgotado"}:
         return MENSAGEM_DEMORA
     if not erro_de_configuracao and tipos == {"limite_de_uso"}:
@@ -286,6 +309,7 @@ class Provedor:
             saida.tokens_saida if saida.tokens_saida is not None else "-",
             "sim" if saida.teve_raciocinio else "nao",
         )
+        self._conferir_saida(saida)
         texto = saida.texto
         if not texto or not texto.strip():
             # Causa comum nos modelos gratuitos: um modelo de "raciocínio" gasta
@@ -294,6 +318,9 @@ class Provedor:
         if saida.motivo_do_fim in ("length", "max_tokens"):
             texto = texto.rstrip() + NOTA_RESPOSTA_INCOMPLETA
         return texto
+
+    def _conferir_saida(self, saida: "Saida") -> None:
+        """Ponto para cada provedor recusar respostas que não servem."""
 
     def _criar_cliente(self):
         raise NotImplementedError
@@ -334,12 +361,19 @@ class ProvedorCompativelComOpenAI(Provedor):
             return {"max_completion_tokens": self.geracao.max_tokens}
         return {"max_tokens": self.geracao.max_tokens}
 
+    def _parametros_extras(self) -> dict:
+        return {}
+
+    def _modelo_da_chamada(self) -> str:
+        return self.modelo
+
     def _chamar(self, cliente, mensagens: list[dict], instrucoes: str, **opcoes) -> Saida:
         resposta = cliente.chat.completions.create(
-            model=self.modelo,
+            model=self._modelo_da_chamada(),
             messages=[{"role": "system", "content": instrucoes}, *mensagens],
             temperature=self.geracao.temperatura,
             **self._parametros_de_tamanho(),
+            **self._parametros_extras(),
             **opcoes,
         )
         modelo = getattr(resposta, "model", None)
@@ -357,6 +391,79 @@ class ProvedorCompativelComOpenAI(Provedor):
             # O OpenRouter devolve o raciocínio num campo à parte ("reasoning").
             teve_raciocinio=bool(getattr(mensagem, "reasoning", None)),
         )
+
+
+class ProvedorOpenRouter(ProvedorCompativelComOpenAI):
+    """OpenRouter só com modelos GRATUITOS e de CONVERSA (veja modelos_gratuitos.py).
+
+    A cada chamada:
+      1. tira da lista os modelos de quarentena;
+      2. confere a lista no catálogo oficial (preço zero, gera texto);
+      3. pede ao OpenRouter o 1º modelo aprovado, com os outros como reserva
+         ("models") e preço máximo ZERO ("provider.max_price");
+      4. recusa respostas com cara de classificação e põe o modelo de quarentena.
+    """
+
+    def __init__(self, *args, modelos_reserva=(), catalogo=None, quarentena=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.modelos = [self.modelo, *modelos_reserva]
+        # Defesa extra: o config.yml já recusa esses nomes.
+        recusados = {m: motivo for m in self.modelos if (motivo := motivo_para_recusar_id(m))}
+        if recusados:
+            raise ValueError(f"modelos inadequados para o OpenRouter: {recusados}")
+        self.catalogo = catalogo or CatalogoOpenRouter()
+        self.quarentena = quarentena or Quarentena()
+        self._local = threading.local()  # modelos escolhidos NESTA chamada (cada linha tem a sua)
+
+    def responder(self, mensagens, instrucoes, prazo=None, ao_iniciar=None) -> str:
+        candidatos = self.quarentena.filtrar(self.modelos)
+        if not candidatos:
+            # Todos de quarentena: não consulta o catálogo nem a IA e não
+            # volta a usar os modelos bloqueados.
+            logger.warning(
+                "ia_modelos id=%s resultado=todos_em_quarentena modelos=%s",
+                id_da_pergunta.get(), ",".join(self.modelos),
+            )
+            raise FalhaDoProvedor(self.nome, "sem_modelo_adequado")
+        tempo_do_catalogo = 4.0 if prazo is None else max(0.5, min(4.0, prazo / 4))
+        avaliacao = self.catalogo.avaliar(candidatos, tempo_do_catalogo)
+        if avaliacao is None:
+            # Sem catálogo: segue com a lista do config.yml. O preço máximo
+            # zero no pedido continua impedindo qualquer cobrança.
+            escolhidos = candidatos
+            logger.warning("ia_modelos id=%s catalogo=indisponivel usando=%s", id_da_pergunta.get(), ",".join(escolhidos))
+        else:
+            escolhidos, recusados = avaliacao
+            for modelo, motivo in recusados.items():
+                logger.warning("ia_modelos id=%s recusado=%s motivo=%s", id_da_pergunta.get(), modelo, motivo)
+            if not escolhidos:
+                raise FalhaDoProvedor(self.nome, "sem_modelo_adequado")
+        self._local.escolhidos = escolhidos
+        return super().responder(mensagens, instrucoes, prazo=prazo, ao_iniciar=ao_iniciar)
+
+    def _parametros_extras(self) -> dict:
+        escolhidos = getattr(self._local, "escolhidos", None) or self.modelos
+        corpo = {"provider": {"max_price": dict(PRECO_MAXIMO_ZERO)}}
+        if len(escolhidos) > 1:
+            corpo["models"] = list(escolhidos)
+        return {"extra_body": corpo}
+
+    def _modelo_da_chamada(self) -> str:
+        # O 1º aprovado vai em "model"; os outros, em "models" (reserva do OpenRouter).
+        escolhidos = getattr(self._local, "escolhidos", None) or self.modelos
+        return escolhidos[0]
+
+    def _conferir_saida(self, saida: Saida) -> None:
+        servido = saida.modelo_servido
+        if (servido and nao_conversa(servido)) or parece_classificacao(saida.texto):
+            if servido:
+                self.quarentena.adicionar(servido)
+            logger.warning(
+                "ia_modelos id=%s quarentena=%s motivo=resposta_inadequada", id_da_pergunta.get(), servido or "-"
+            )
+            raise FalhaDoProvedor(self.nome, "resposta_inadequada")
+        if servido and not (saida.texto or "").strip():
+            self.quarentena.adicionar(servido)  # respondeu vazio: dá a vez para outro modelo
 
 
 class ProvedorAnthropic(Provedor):
@@ -404,13 +511,15 @@ def criar_provedores(config: Configuracao, ambiente: Mapping[str, str] | None = 
         chave = ambiente.get(VARIAVEIS_DE_CHAVE[item.nome])
         if item.nome == "anthropic":
             provedores.append(ProvedorAnthropic(item.nome, item.modelo, chave, config.geracao))
-        else:
-            endereco = ENDERECO_OPENROUTER if item.nome == "openrouter" else None
+        elif item.nome == "openrouter":
             provedores.append(
-                ProvedorCompativelComOpenAI(
-                    item.nome, item.modelo, chave, config.geracao, endereco=endereco
+                ProvedorOpenRouter(
+                    item.nome, item.modelo, chave, config.geracao,
+                    endereco=ENDERECO_OPENROUTER, modelos_reserva=item.modelos_reserva,
                 )
             )
+        else:
+            provedores.append(ProvedorCompativelComOpenAI(item.nome, item.modelo, chave, config.geracao))
     return provedores
 
 

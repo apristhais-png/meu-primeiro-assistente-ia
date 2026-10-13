@@ -237,3 +237,38 @@ pergunta_fim id=3fa2c1d0 resultado=sucesso provedor=openrouter total_ms=16950
   `max_tokens` "pensando" e não sobrou espaço para a resposta.
 - `resultado=tempo_esgotado`, `limite_de_uso` (429), `servidor` (5xx) ou
   `resposta_vazia`: mostram por que a tentativa falhou.
+
+## 9. Modelos gratuitos do OpenRouter: só de conversa
+
+**Por que mudou:** o `openrouter/free` sorteia entre **todos** os modelos
+gratuitos. Num caso real, ele mandou a pergunta para um classificador de
+segurança (`nvidia/nemotron-3.5-content-safety:free`), que respondeu só
+"User Safety: safe".
+
+Agora o `config.yml` tem uma **lista explícita** (`modelo` + `modelos_reserva`)
+e o app tem quatro proteções:
+
+1. O `config.yml` só aceita nomes terminados em `:free` e recusa roteadores
+   (`openrouter/...`) e modelos que não conversam (segurança, moderação,
+   embeddings, áudio).
+2. Antes de usar, o app confere a lista no **catálogo oficial** do OpenRouter
+   (público, sem chave e sem custo, guardado por 1 hora): o modelo precisa
+   existir, ter **todos os preços iguais a zero** e gerar só texto.
+3. Todo pedido vai com **preço máximo zero** (`provider.max_price`): se um
+   modelo deixar de ser grátis, o OpenRouter recusa em vez de cobrar.
+4. Uma resposta com cara de classificação não é mostrada: o modelo fica 15
+   minutos de "quarentena" e a nova tentativa vai para o próximo da lista.
+
+Se nenhum modelo da lista passar no catálogo, a pessoa vê "Nenhum modelo
+gratuito adequado está disponível agora..." e nada é chamado.
+
+**Como validar com o OpenRouter de verdade** (no seu computador, com a chave
+no `.env`; custo zero, gasta 1 ou 2 pedidos gratuitos do dia):
+
+```bash
+python scripts/conferir_modelos.py    # todos devem aparecer como [OK] ... (gratuito, conversa em texto)
+python scripts/testar_openrouter.py   # deve terminar com [OK] e mostrar uma explicação
+```
+
+Se algum modelo aparecer com `[ERRO]`, troque-o no `config.yml` por outro
+gratuito de conversa da [lista oficial](https://openrouter.ai/collections/free-models).

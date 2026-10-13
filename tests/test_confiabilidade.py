@@ -302,9 +302,11 @@ def test_so_com_a_chave_do_openrouter_nenhum_provedor_pago_e_chamado():
     assert [t.resultado for t in erro.value.tentativas] == ["servidor", "servidor", "sem_chave", "sem_chave"]
 
 
-def test_modelo_do_openrouter_no_config_e_o_roteador_gratuito():
+def test_modelos_do_openrouter_no_config_sao_gratuitos_e_explicitos():
     [item] = [p for p in CONFIG.provedores_ativos if p.nome == "openrouter"]
-    assert item.modelo == "openrouter/free"
+    for modelo in (item.modelo, *item.modelos_reserva):
+        assert modelo.endswith(":free")
+        assert not modelo.startswith("openrouter/")  # nada de roteador que sorteia classificadores
 
 
 # =============================================================

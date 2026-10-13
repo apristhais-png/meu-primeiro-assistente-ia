@@ -25,6 +25,7 @@ from pydantic import (
 )
 
 from assistente import cores
+from assistente.modelos_gratuitos import motivo_para_recusar_id
 
 RAIZ_DO_PROJETO = Path(__file__).resolve().parent.parent
 CAMINHO_PADRAO = RAIZ_DO_PROJETO / "config.yml"
@@ -138,7 +139,29 @@ class Limites(_Secao):
 class Provedor(_Secao):
     nome: Literal["openrouter", "anthropic", "openai"]
     modelo: str = Field(min_length=1)
+    # Só no OpenRouter: outros modelos gratuitos, em ordem, se o principal
+    # estiver indisponível ou responder mal.
+    modelos_reserva: list[str] = []
     ativo: StrictBool = True
+
+    @model_validator(mode="after")
+    def modelos_do_openrouter_gratuitos_e_de_conversa(self) -> "Provedor":
+        if self.nome != "openrouter":
+            if self.modelos_reserva:
+                raise ValueError("modelos_reserva só vale para o provedor openrouter")
+            return self
+        todos = [self.modelo, *self.modelos_reserva]
+        repetidos = sorted({m for m in todos if todos.count(m) > 1})
+        if repetidos:
+            raise ValueError(f"modelo repetido no openrouter: {', '.join(repetidos)}")
+        problemas = [
+            f"{modelo!r}: {motivo}"
+            for modelo in todos
+            if (motivo := motivo_para_recusar_id(modelo))
+        ]
+        if problemas:
+            raise ValueError("; ".join(problemas))
+        return self
 
 
 class Configuracao(_Secao):

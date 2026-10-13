@@ -80,9 +80,18 @@ limites:
 # Na ordem de preferência: o primeiro é o principal; os outros entram
 # se ele falhar. Use "ativo: false" para desligar um provedor.
 # Confirme no site de cada provedor se o modelo continua disponível.
+# OpenRouter: só modelos GRATUITOS (":free") de CONVERSA, numa lista explícita.
+# NÃO use "openrouter/free": ele sorteia entre todos os gratuitos, inclusive
+# classificadores de segurança que respondem só "User Safety: safe".
+# Antes de cada uso, o app confere no catálogo oficial do OpenRouter se o
+# modelo existe e se é grátis; os que não passarem são pulados.
+# Para conferir esta lista a qualquer momento: python scripts/conferir_modelos.py
 provedores:
   - nome: openrouter
-    modelo: "openrouter/free"            # roteador gratuito do OpenRouter (escolhe um modelo grátis)
+    modelo: "google/gemma-4-31b-it:free"
+    modelos_reserva:                     # usados se o principal falhar, nesta ordem
+      - "nvidia/nemotron-3-super-120b-a12b:free"
+      - "google/gemma-4-26b-a4b-it:free"
     ativo: true
   - nome: anthropic
     modelo: "claude-haiku-5-5"
