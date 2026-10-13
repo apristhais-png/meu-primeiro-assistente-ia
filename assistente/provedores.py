@@ -173,16 +173,21 @@ class Resposta:
 
 
 def _mensagem_para_pessoa(tentativas: list[Tentativa], erro_de_configuracao: bool) -> str:
-    """Mensagem curta, sem detalhes técnicos. Específica só quando todas as falhas foram iguais."""
-    tipos = {t.resultado for t in tentativas if t.resultado != "sem_chave"}
+    """Mensagem curta, sem detalhes técnicos.
+
+    Específica quando a última tentativa mostrou que não sobrou modelo adequado,
+    ou quando todas as falhas foram do mesmo tipo.
+    """
+    resultados = [t.resultado for t in tentativas if t.resultado != "sem_chave"]
+    tipos = set(resultados)
+    if not erro_de_configuracao and resultados and resultados[-1] == "sem_modelo_adequado":
+        return MENSAGEM_SEM_MODELO  # a situação atual é: não sobrou modelo adequado
     if not erro_de_configuracao and tipos == {"tempo_esgotado"}:
         return MENSAGEM_DEMORA
     if not erro_de_configuracao and tipos == {"limite_de_uso"}:
         return MENSAGEM_MUITOS_PEDIDOS
     if not erro_de_configuracao and tipos == {"sem_vaga"}:
         return MENSAGEM_OCUPADO
-    if not erro_de_configuracao and tipos == {"sem_modelo_adequado"}:
-        return MENSAGEM_SEM_MODELO
     return MENSAGEM_SEM_RESPOSTA
 
 
@@ -412,6 +417,14 @@ class ProvedorOpenRouter(ProvedorCompativelComOpenAI):
 
     def responder(self, mensagens, instrucoes, prazo=None, ao_iniciar=None) -> str:
         candidatos = self.quarentena.filtrar(self.modelos)
+        if not candidatos:
+            # Todos de quarentena: não consulta o catálogo nem a IA e não
+            # volta a usar os modelos bloqueados.
+            logger.warning(
+                "ia_modelos id=%s resultado=todos_em_quarentena modelos=%s",
+                id_da_pergunta.get(), ",".join(self.modelos),
+            )
+            raise FalhaDoProvedor(self.nome, "sem_modelo_adequado")
         tempo_do_catalogo = 4.0 if prazo is None else max(0.5, min(4.0, prazo / 4))
         avaliacao = self.catalogo.avaliar(candidatos, tempo_do_catalogo)
         if avaliacao is None:

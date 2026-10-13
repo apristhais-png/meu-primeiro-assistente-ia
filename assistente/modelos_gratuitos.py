@@ -177,8 +177,11 @@ class Quarentena:
             self._ate[modelo] = self._relogio() + segundos
 
     def filtrar(self, modelos: list[str]) -> list[str]:
-        """Tira os modelos de quarentena. Se todos estiverem, devolve a lista inteira."""
+        """Tira os modelos de quarentena. Se todos estiverem, devolve uma lista VAZIA.
+
+        Um modelo bloqueado nunca volta antes do fim da quarentena: quem chama
+        decide o que fazer quando não sobra nenhum.
+        """
         agora = self._relogio()
         with self._trava:
-            livres = [m for m in modelos if self._ate.get(m, 0) <= agora]
-        return livres or list(modelos)
+            return [m for m in modelos if self._ate.get(m, 0) <= agora]

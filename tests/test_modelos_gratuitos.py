@@ -348,6 +348,72 @@ def test_criar_provedores_usa_o_openrouter_seguro_com_a_reserva_do_config():
 
 
 # =============================================================
+# Todos os modelos de quarentena
+# =============================================================
+
+def test_quarentena_com_todos_bloqueados_devolve_lista_vazia_ate_vencer():
+    agora = [0.0]
+    quarentena = Quarentena(relogio=lambda: agora[0])
+    quarentena.adicionar(PRINCIPAL, segundos=100)
+    quarentena.adicionar(RESERVA_1, segundos=200)
+    assert quarentena.filtrar([PRINCIPAL, RESERVA_1]) == []  # nunca volta a usar os bloqueados
+    agora[0] = 150
+    assert quarentena.filtrar([PRINCIPAL, RESERVA_1]) == [PRINCIPAL]  # venceu a do principal
+    agora[0] = 250
+    assert quarentena.filtrar([PRINCIPAL, RESERVA_1]) == [PRINCIPAL, RESERVA_1]
+
+
+def quarentena_com(*modelos):
+    quarentena = Quarentena()
+    for modelo in modelos:
+        quarentena.adicionar(modelo)
+    return quarentena
+
+
+def test_todos_de_quarentena_nao_consulta_catalogo_nem_ia_e_mostra_mensagem_amigavel(caplog):
+    caplog.set_level(logging.INFO)
+    baixar = MagicMock(return_value=list(CATALOGO_BOM))
+    provedor = openrouter(
+        resposta("não deveria ser chamado"),
+        catalogo=CatalogoOpenRouter(baixar=baixar),
+        quarentena=quarentena_com(PRINCIPAL, RESERVA_1, RESERVA_2),
+    )
+    with pytest.raises(SemResposta) as erro:
+        com_prazo([provedor])
+    provedor.criar.assert_not_called()  # a IA não foi consultada
+    baixar.assert_not_called()  # nem o catálogo
+    assert erro.value.mensagem_para_pessoa == MENSAGEM_SEM_MODELO
+    assert [t.resultado for t in erro.value.tentativas] == ["sem_modelo_adequado"]  # sem nova tentativa
+    assert "todos_em_quarentena" in caplog.text
+
+
+def test_o_ultimo_modelo_livre_responde_mal_e_a_nova_tentativa_nao_volta_aos_bloqueados():
+    provedor = openrouter(
+        resposta("User Safety: safe", modelo=RESERVA_2),
+        resposta("não deveria ser chamado"),
+        quarentena=quarentena_com(PRINCIPAL, RESERVA_1),
+    )
+    with pytest.raises(SemResposta) as erro:
+        com_prazo([provedor])
+    assert provedor.criar.call_count == 1  # só o último livre foi chamado
+    assert provedor.criar.call_args.kwargs["model"] == RESERVA_2
+    assert [t.resultado for t in erro.value.tentativas] == ["resposta_inadequada", "sem_modelo_adequado"]
+    assert erro.value.mensagem_para_pessoa == MENSAGEM_SEM_MODELO
+
+
+def test_todos_de_quarentena_pelo_chat_mostra_o_aviso_amigavel():
+    provedor = openrouter(
+        resposta("Resposta boa.", modelo=PRINCIPAL),
+        quarentena=quarentena_com(PRINCIPAL, RESERVA_1, RESERVA_2),
+    )
+    chat = Assistente(CONFIG, provedores=[provedor], limitador=Limitador(CONFIG.limites))
+    resultado = chat.responder("Pergunta 1", [])
+    assert resultado.texto == MENSAGEM_SEM_MODELO
+    assert resultado.situacao == "falha:sem_modelo_adequado"
+    provedor.criar.assert_not_called()
+
+
+# =============================================================
 # Pela tela/chat: o rótulo nunca chega à pessoa nem ao histórico
 # =============================================================
 
