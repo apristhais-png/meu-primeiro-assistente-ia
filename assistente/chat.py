@@ -37,6 +37,7 @@ from assistente.provedores import (
     id_da_pergunta,
     responder_com_fallback,
 )
+from assistente.tutor import escolher_modo, escolher_nivel, montar_instrucoes
 
 logger = logging.getLogger("assistente.chat")
 
@@ -142,17 +143,21 @@ class Assistente:
             config.limites.tamanho_maximo_pergunta, config.geracao.max_tokens * 8
         )
 
-    def responder(self, pergunta: str, historico=None, cabecalhos=None) -> Resultado:
+    def responder(self, pergunta: str, historico=None, cabecalhos=None, nivel=None, modo=None) -> Resultado:
         """Responde uma pergunta. "historico" é a conversa desta pessoa até agora.
+
+        "nivel" e "modo" são as CHAVES escolhidas na tela (veja tutor.py);
+        valores desconhecidos viram o padrão.
 
         Registra no log uma linha de início e uma de fim, com tempos e
         resultado, ligadas por um id curto. Nunca registra o texto.
         """
+        nivel, modo = escolher_nivel(nivel).chave, escolher_modo(modo).chave
         marca = id_da_pergunta.set(uuid.uuid4().hex[:8])
         inicio = time.monotonic()
-        logger.info("pergunta_inicio id=%s", id_da_pergunta.get())
+        logger.info("pergunta_inicio id=%s nivel=%s modo=%s", id_da_pergunta.get(), nivel, modo)
         try:
-            resultado = self._responder(pergunta, historico, cabecalhos)
+            resultado = self._responder(pergunta, historico, cabecalhos, nivel, modo)
             logger.info(
                 "pergunta_fim id=%s resultado=%s provedor=%s total_ms=%d",
                 id_da_pergunta.get(), resultado.situacao, resultado.provedor or "-",
@@ -162,7 +167,7 @@ class Assistente:
         finally:
             id_da_pergunta.reset(marca)
 
-    def _responder(self, pergunta: str, historico, cabecalhos) -> Resultado:
+    def _responder(self, pergunta: str, historico, cabecalhos, nivel: str, modo: str) -> Resultado:
         pergunta = (pergunta or "").strip()
         if not pergunta:
             return Resultado(MENSAGEM_PERGUNTA_VAZIA, liberada=False, motivo_do_bloqueio="pergunta_vazia")
@@ -180,12 +185,13 @@ class Assistente:
         )
         mensagens.append({"role": "user", "content": pergunta})
 
-        # 3. Fallback entre os provedores, com as instruções do config.yml,
-        #    dentro do tempo máximo total da pergunta.
+        # 3. Fallback entre os provedores, com as instruções do config.yml
+        #    mais o nível e o modo de estudo (tutor.py), dentro do tempo
+        #    máximo total da pergunta.
         geracao = self.config.geracao
         try:
             resposta = responder_com_fallback(
-                self.provedores, mensagens, self.config.instrucoes,
+                self.provedores, mensagens, montar_instrucoes(self.config.instrucoes, nivel, modo),
                 tempo_maximo_total=geracao.tempo_maximo_total_segundos,
                 timeout_por_tentativa=geracao.timeout_segundos,
                 tentativas_por_provedor=geracao.tentativas_por_provedor,

@@ -328,8 +328,9 @@ class AssistenteQueAnota:
         self.texto = texto
         self.erro = erro
 
-    def responder(self, pergunta, historico, cabecalhos):
+    def responder(self, pergunta, historico, cabecalhos, nivel=None, modo=None):
         self.chamadas.append((pergunta, historico, cabecalhos))
+        self.escolhas = (nivel, modo)
         if self.erro:
             raise self.erro
         return SimpleNamespace(texto=self.texto)

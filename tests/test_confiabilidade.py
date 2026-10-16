@@ -358,7 +358,7 @@ class AssistenteLento:
         self.chamadas = 0
         self.liberar = threading.Event()
 
-    def responder(self, pergunta, historico, cabecalhos):
+    def responder(self, pergunta, historico, cabecalhos, nivel=None, modo=None):
         self.chamadas += 1
         self.liberar.wait(5)
         return SimpleNamespace(texto="ok")

@@ -25,6 +25,7 @@ import gradio as gr
 from assistente import cores
 from assistente.chat import MENSAGEM_AGUARDE, Assistente
 from assistente.config import RAIZ_DO_PROJETO, Configuracao
+from assistente.tutor import MODO_PADRAO, MODOS, NIVEIS, NIVEL_PADRAO, opcoes_para_tela
 
 logger = logging.getLogger("assistente.interface")
 
@@ -153,6 +154,12 @@ def css_extra(config: Configuracao) -> str:
     @media (prefers-reduced-motion: reduce) {{
         .gradio-container * {{ animation: none !important; transition: none !important; }} }}
 
+    /* ---------- Nível e modo (discretos, quebram linha no celular) ---------- */
+    .controles-tutor {{ gap: 8px !important; flex-wrap: wrap !important; }}
+    .controles-tutor > * {{ flex: 1 1 260px !important; }}
+    .controles-tutor .wrap {{ gap: 6px !important; }}
+    .controles-tutor label {{ min-height: 36px; }}
+
     /* ---------- Rodapé ---------- */
     .aviso {{ text-align: center; color: {apoio}; font-size: 0.85rem; margin: 0; }}
 
@@ -199,7 +206,8 @@ def criar_funcao_de_resposta(assistente: Assistente):
     em_andamento: set[str] = set()
     trava = threading.Lock()
 
-    def responder(mensagem: str, historico: list, request: gr.Request = None) -> str:
+    # O Gradio coloca o "request" na posição dele e manda nível e modo depois.
+    def responder(mensagem: str, historico: list, request: gr.Request = None, nivel=None, modo=None) -> str:
         # Os cabeçalhos do pedido vão para os limites (identificação pelo IP).
         cabecalhos = request.headers if request is not None else None
         sessao = getattr(request, "session_hash", None) if request is not None else None
@@ -210,7 +218,7 @@ def criar_funcao_de_resposta(assistente: Assistente):
                     return MENSAGEM_AGUARDE
                 em_andamento.add(sessao)
         try:
-            return assistente.responder(mensagem, historico, cabecalhos).texto
+            return assistente.responder(mensagem, historico, cabecalhos, nivel=nivel, modo=modo).texto
         except Exception as erro:  # noqa: BLE001 - a pessoa nunca deve ver um erro técnico
             # Só o tipo do erro vai para o log: nada de pergunta, resposta ou chave.
             logger.error("Erro inesperado ao responder (%s).", type(erro).__name__)
@@ -268,6 +276,16 @@ def criar_interface(
                 "Nova conversa", variant="secondary", size="md",
                 scale=0, min_width=140, elem_id="nova-conversa",
             )
+        # Tutor adaptativo: nível e modo vão para as instruções da IA (tutor.py).
+        with gr.Row(elem_classes="controles-tutor"):
+            nivel = gr.Radio(
+                opcoes_para_tela(NIVEIS), value=NIVEL_PADRAO, label="Seu nível",
+                elem_id="nivel", min_width=0,
+            )
+            modo = gr.Radio(
+                opcoes_para_tela(MODOS), value=MODO_PADRAO, label="Modo de estudo",
+                elem_id="modo", min_width=0,
+            )
         chat = gr.ChatInterface(
             fn=criar_funcao_de_resposta(assistente),
             chatbot=gr.Chatbot(
@@ -294,7 +312,10 @@ def criar_interface(
                 max_length=config.limites.tamanho_maximo_pergunta,
                 html_attributes=gr.InputHTMLAttributes(lang="pt-BR", enterkeyhint="send", autocomplete="off"),
             ),
-            examples=dados.exemplos_de_perguntas or None,
+            additional_inputs=[nivel, modo],
+            # Com nível e modo, o Gradio pede cada exemplo como lista; só a
+            # pergunta vai nela, e o nível e o modo continuam os da tela.
+            examples=[[exemplo] for exemplo in dados.exemplos_de_perguntas] or None,
             cache_examples=False,  # não chamar a IA ao abrir o app (sem custo)
             save_history=False,  # histórico salvo fica para outra etapa
             concurrency_limit=PERGUNTAS_AO_MESMO_TEMPO,
@@ -321,6 +342,7 @@ def criar_interface(
         )
     demo.chat_interface = chat  # referência usada pelos testes
     demo.nova_conversa = nova_conversa
+    demo.nivel, demo.modo = nivel, modo
     demo.queue(max_size=TAMANHO_DA_FILA)
     return demo
 
