@@ -24,6 +24,7 @@ from assistente.provedores import (
     ProvedorAnthropic,
     ProvedorCompativelComOpenAI,
 )
+from assistente.tutor import montar_instrucoes
 
 CONFIG = carregar_configuracao()
 PESSOA_A = {"X-Forwarded-For": "8.8.8.8"}
@@ -86,7 +87,8 @@ def test_pergunta_vai_para_a_ia_com_historico_e_instrucoes():
     assert resultado.texto == "ETL é extrair, transformar e carregar."
     assert (resultado.liberada, resultado.provedor) == (True, "openrouter")
     [chamada] = ia.chamadas
-    assert chamada["instrucoes"] == CONFIG.instrucoes
+    # Instruções do config.yml + nível e modo padrão do tutor (tutor.py).
+    assert chamada["instrucoes"] == montar_instrucoes(CONFIG.instrucoes)
     assert chamada["mensagens"] == [*historico, {"role": "user", "content": "O que é ETL?"}]
 
 
@@ -114,10 +116,10 @@ def test_ponta_a_ponta_com_provedor_real_e_cliente_simulado(classe, nome):
     assert chat.responder("Olá", conversa("antes", "resposta antes")).texto == "Oi!"
     argumentos = criar.call_args.kwargs
     if nome == "anthropic":
-        assert argumentos["system"] == CONFIG.instrucoes
+        assert argumentos["system"] == montar_instrucoes(CONFIG.instrucoes)
         assert argumentos["messages"][-1] == {"role": "user", "content": "Olá"}
     else:
-        assert argumentos["messages"][0] == {"role": "system", "content": CONFIG.instrucoes}
+        assert argumentos["messages"][0] == {"role": "system", "content": montar_instrucoes(CONFIG.instrucoes)}
         assert argumentos["messages"][-1] == {"role": "user", "content": "Olá"}
 
 

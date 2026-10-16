@@ -40,6 +40,27 @@ qualquer pessoa pelo navegador.
   teclado, com foco bem visível.
 - Não guarda nenhuma chave de API no código.
 
+## Tutor adaptativo (nível e modo de estudo)
+
+Acima da conversa há dois seletores:
+
+| Seletor | Opções | O que muda na resposta |
+|---|---|---|
+| **Seu nível** | Iniciante · Intermediário · Avançado | Linguagem, tamanho dos exemplos e profundidade técnica. |
+| **Modo de estudo** | Explicação · Exercício prático · Revisão | Explicação organizada; um exercício (Python, SQL ou Engenharia de Dados) com dica e critérios de verificação, **sem a solução**; ou um resumo com perguntas rápidas. |
+
+- No modo **Exercício prático**, envie sua tentativa na conversa: o tutor diz o
+  que está certo, explica os erros e orienta como melhorar. A solução completa
+  só aparece se você pedir ou depois de duas tentativas sem sucesso.
+- O nível e o modo entram nas **instruções enviadas à IA** a cada pergunta
+  (arquivo `assistente/tutor.py`), junto com as `instrucoes` do `config.yml`.
+  A tela e a API só mandam a opção escolhida; o texto das instruções vem do
+  app, então ninguém consegue colocar instruções próprias por esse caminho.
+- **Continuidade:** o exercício e as tentativas ficam no histórico desta
+  conversa (as últimas `max_mensagens_historico` mensagens). Nada é guardado
+  depois que a página é fechada ou a conversa é reiniciada; não há cadastro
+  nem banco de dados.
+
 ## Como rodar no seu computador
 
 Na pasta do projeto:
