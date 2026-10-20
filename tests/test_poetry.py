@@ -97,6 +97,11 @@ def test_streamlit_e_plotly_ficam_fora_das_dependencias_do_chatbot(pyproject):
     assert {"streamlit", "plotly"} <= set(grupo(pyproject, "dados"))
 
 
+def test_grupos_opcionais_poetry_install_instala_so_o_chatbot(pyproject):
+    for nome in ("dados", "dev"):
+        assert pyproject["tool"]["poetry"]["group"][nome]["optional"] is True
+
+
 def test_poetry_nao_empacota_e_nao_entra_nas_dependencias(pyproject):
     assert pyproject["tool"]["poetry"]["package-mode"] is False
     todas = {*dependencias_principais(pyproject), *grupo(pyproject, "dados"), *grupo(pyproject, "dev")}

@@ -40,8 +40,14 @@ dependencies = [
 # dependências (não tenta empacotar as pastas do projeto).
 package-mode = false
 
+# Os grupos são opcionais: "poetry install" instala só o chatbot (o mesmo
+# conjunto do Render); "poetry install --with dados,dev" instala tudo.
+
 # Pipeline do IBGE e dashboard (Produto B) = requirements-dados.txt.
 # O pydantic já está nas dependências principais (mesma versão).
+[tool.poetry.group.dados]
+optional = true
+
 [tool.poetry.group.dados.dependencies]
 requests = "2.34.2"
 pandas = "3.0.6"
@@ -49,6 +55,9 @@ streamlit = "1.66.0"
 plotly = "7.1.0"
 
 # Testes e qualidade = requirements-dev.txt.
+[tool.poetry.group.dev]
+optional = true
+
 [tool.poetry.group.dev.dependencies]
 pytest = "9.1.1"
 pytest-cov = "7.1.0"
