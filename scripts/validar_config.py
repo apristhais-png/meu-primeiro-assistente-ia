@@ -40,7 +40,9 @@ def main(argumentos: list[str] | None = None) -> int:
     identificacao = "ligada" if config.limites.identificar_por_ip else "desligada"
     print(f"[OK] {caminho.name} está correto.")
     print(f"  Assistente: {config.assistente.nome}")
-    print(f"  Tema: {config.aparencia.tema} | cores {config.aparencia.cor_primaria} e {config.aparencia.cor_secundaria}")
+    print(
+        f"  Tema: {config.aparencia.tema} | cores {config.aparencia.cor_primaria} e {config.aparencia.cor_secundaria}"
+    )
     print(f"  Provedores ativos, em ordem: {ativos}")
     print(
         f"  Limites globais: {config.limites.perguntas_por_minuto_total}/minuto e "

@@ -71,6 +71,7 @@ class Resultado:
 
 # ---------- Histórico ----------
 
+
 def _texto_do_conteudo(conteudo) -> str | None:
     """Extrai o texto de uma mensagem do Gradio (texto simples ou lista de partes)."""
     if isinstance(conteudo, str):
@@ -124,6 +125,7 @@ def preparar_historico(historico, maximo_de_mensagens: int, maximo_de_caracteres
 
 # ---------- Assistente ----------
 
+
 class Assistente:
     """Responde perguntas usando o config.yml. Não guarda conversas."""
 
@@ -160,7 +162,9 @@ class Assistente:
             resultado = self._responder(pergunta, historico, cabecalhos, nivel, modo)
             logger.info(
                 "pergunta_fim id=%s resultado=%s provedor=%s total_ms=%d",
-                id_da_pergunta.get(), resultado.situacao, resultado.provedor or "-",
+                id_da_pergunta.get(),
+                resultado.situacao,
+                resultado.provedor or "-",
                 round((time.monotonic() - inicio) * 1000),
             )
             return resultado
@@ -191,12 +195,16 @@ class Assistente:
         geracao = self.config.geracao
         try:
             resposta = responder_com_fallback(
-                self.provedores, mensagens, montar_instrucoes(self.config.instrucoes, nivel, modo),
+                self.provedores,
+                mensagens,
+                montar_instrucoes(self.config.instrucoes, nivel, modo),
                 tempo_maximo_total=geracao.tempo_maximo_total_segundos,
                 timeout_por_tentativa=geracao.timeout_segundos,
                 tentativas_por_provedor=geracao.tentativas_por_provedor,
             )
         except SemResposta as erro:
-            ultima = next((t.resultado for t in reversed(erro.tentativas) if t.resultado != "sem_chave"), "sem_provedor")
+            ultima = next(
+                (t.resultado for t in reversed(erro.tentativas) if t.resultado != "sem_chave"), "sem_provedor"
+            )
             return Resultado(erro.mensagem_para_pessoa, liberada=True, situacao=f"falha:{ultima}")
         return Resultado(resposta.texto, liberada=True, provedor=resposta.provedor, situacao="sucesso")

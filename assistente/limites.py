@@ -60,6 +60,7 @@ class Decisao:
 
 # ---------- Identificação ----------
 
+
 def _valores_do_x_forwarded_for(cabecalhos) -> list[str]:
     """Lê todas as linhas X-Forwarded-For, na ordem em que chegaram.
 
@@ -89,6 +90,7 @@ def ip_confiavel(cabecalhos) -> tuple[str | None, int]:
 
 
 # ---------- Limitador ----------
+
 
 class Limitador:
     """Confere e conta as perguntas. Seguro para vários pedidos ao mesmo tempo."""

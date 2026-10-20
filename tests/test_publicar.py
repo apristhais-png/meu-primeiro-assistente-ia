@@ -115,6 +115,7 @@ def rodar(projeto, *argumentos, api=None, ambiente=None):
 # Lista permitida: o que é enviado
 # =============================================================
 
+
 def test_envia_so_os_arquivos_do_app(projeto):
     enviar = pub.escolher_arquivos_para_enviar(pub.listar_arquivos_do_git(projeto), projeto)
     assert enviar == ESPERADOS
@@ -122,8 +123,17 @@ def test_envia_so_os_arquivos_do_app(projeto):
 
 @pytest.mark.parametrize(
     "nunca",
-    ["tests/test_algo.py", "scripts/publicar.py", "SPEC-parte1-cicd-deploy.md", "IDEIA-parte1.md",
-     ".github/workflows/ci-deploy.yml", ".env", ".env.example", ".gitignore", "pyproject.toml"],
+    [
+        "tests/test_algo.py",
+        "scripts/publicar.py",
+        "SPEC-parte1-cicd-deploy.md",
+        "IDEIA-parte1.md",
+        ".github/workflows/ci-deploy.yml",
+        ".env",
+        ".env.example",
+        ".gitignore",
+        "pyproject.toml",
+    ],
 )
 def test_nunca_envia_testes_scripts_documentos_e_segredos(projeto, nunca):
     assert nunca not in pub.escolher_arquivos_para_enviar(pub.listar_arquivos_do_git(projeto), projeto)
@@ -138,8 +148,15 @@ def test_arquivo_fora_do_git_nao_e_enviado(projeto):
 
 @pytest.mark.parametrize(
     "perigoso",
-    ["assistente/.env", "assets/.env.local", "assets/chave.pem", "assets/servidor.key",
-     "assistente/client_secret.json", "assistente/__pycache__/chat.cpython-311.pyc", "assets/id_rsa"],
+    [
+        "assistente/.env",
+        "assets/.env.local",
+        "assets/chave.pem",
+        "assets/servidor.key",
+        "assistente/client_secret.json",
+        "assistente/__pycache__/chat.cpython-311.pyc",
+        "assets/id_rsa",
+    ],
 )
 def test_arquivo_perigoso_numa_pasta_do_app_cancela_tudo(projeto, perigoso, capsys):
     caminho = projeto / perigoso
@@ -163,7 +180,9 @@ def test_chave_dentro_de_um_arquivo_do_app_cancela_tudo(projeto, capsys):
     assert api.publicacoes == []
 
 
-@pytest.mark.parametrize("essencial", ["app.py", "config.yml", "requirements.txt", "README.md", "assistente/__init__.py"])
+@pytest.mark.parametrize(
+    "essencial", ["app.py", "config.yml", "requirements.txt", "README.md", "assistente/__init__.py"]
+)
 def test_falta_de_arquivo_essencial_cancela_tudo(projeto, essencial, capsys):
     git(projeto, "rm", "-q", "--cached", essencial)
     api = ApiFalsa()
@@ -184,15 +203,29 @@ def test_config_invalido_cancela_tudo(projeto, capsys):
 # O que é apagado e o que é protegido no Space
 # =============================================================
 
+
 def test_apaga_so_arquivos_do_app_que_sairam_do_projeto():
     no_space = [
-        "app.py", "README.md", ".gitattributes",
-        "assets/logo.svg", "assets/logo-antiga.svg", "assistente/modulo_removido.py",
-        "dados/arquivo.csv", "notas.txt", "outra-pasta/x.py", "tests/test_velho.py",
+        "app.py",
+        "README.md",
+        ".gitattributes",
+        "assets/logo.svg",
+        "assets/logo-antiga.svg",
+        "assistente/modulo_removido.py",
+        "dados/arquivo.csv",
+        "notas.txt",
+        "outra-pasta/x.py",
+        "tests/test_velho.py",
     ]
     plano = pub.planejar(ESPERADOS, no_space)
     assert plano.apagar == ["assets/logo-antiga.svg", "assistente/modulo_removido.py"]
-    assert plano.intocados == [".gitattributes", "dados/arquivo.csv", "notas.txt", "outra-pasta/x.py", "tests/test_velho.py"]
+    assert plano.intocados == [
+        ".gitattributes",
+        "dados/arquivo.csv",
+        "notas.txt",
+        "outra-pasta/x.py",
+        "tests/test_velho.py",
+    ]
     assert plano.enviar == ESPERADOS
 
 
@@ -232,6 +265,7 @@ def test_ate_o_limite_de_exclusoes_e_permitido():
 # Simulação x publicação
 # =============================================================
 
+
 def test_sem_publicar_e_so_simulacao(projeto, capsys):
     api = ApiFalsa(arquivos=["assets/velho.svg", "notas.txt"])
     assert rodar(projeto, api=api) == 0
@@ -267,6 +301,7 @@ def test_publicacao_e_uma_unica_atualizacao_presa_a_versao_lida(projeto):
 # =============================================================
 # Falha segura: configuração incompleta e erros
 # =============================================================
+
 
 @pytest.mark.parametrize(
     ("ambiente", "mensagem"),
@@ -315,6 +350,7 @@ def test_token_nunca_aparece_na_saida(projeto, capsys):
 # Regras sobre caminhos
 # =============================================================
 
+
 @pytest.mark.parametrize("caminho", ["app.py", "assets/logo.svg", "assistente/sub/x.py"])
 def test_caminhos_normais_sao_seguros(caminho):
     assert pub.caminho_seguro(caminho)
@@ -334,6 +370,7 @@ def test_arquivos_comuns_nao_sao_proibidos(caminho):
 # O projeto real
 # =============================================================
 
+
 def test_projeto_real_envia_a_lista_esperada_sem_chaves():
     enviar = pub.escolher_arquivos_para_enviar(pub.listar_arquivos_do_git(RAIZ), RAIZ)
     for caminho in enviar:
@@ -341,6 +378,8 @@ def test_projeto_real_envia_a_lista_esperada_sem_chaves():
     for essencial in pub.ESSENCIAIS:
         assert essencial in enviar
     assert "assets/logo.svg" in enviar and "assistente/interface.py" in enviar
-    assert not any(c.startswith(("tests/", "scripts/", ".github/")) or c.endswith(".md") and c != "README.md" for c in enviar)
+    assert not any(
+        c.startswith(("tests/", "scripts/", ".github/")) or c.endswith(".md") and c != "README.md" for c in enviar
+    )
     pub.conferir_chaves(enviar, RAIZ)
     pub.conferir_config(RAIZ)

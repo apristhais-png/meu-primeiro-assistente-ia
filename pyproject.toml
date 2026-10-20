@@ -1,6 +1,40 @@
-# Configurações das ferramentas de teste.
+# =============================================================
+# Configuração das ferramentas do projeto
+# =============================================================
+
+# ---------- Testes ----------
 
 [tool.pytest.ini_options]
-# Permite que os testes encontrem a pasta "assistente/" a partir da raiz do projeto.
+# Permite que os testes encontrem as pastas do projeto a partir da raiz.
 pythonpath = ["."]
 testpaths = ["tests"]
+
+# ---------- Cobertura (pytest --cov) ----------
+
+[tool.coverage.run]
+# Módulos de dados e do dashboard: a CI exige pelo menos 80% deles.
+source = ["pipeline", "dashboard"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
+
+# ---------- Ruff (lint e formatação) ----------
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = ["dados"]
+
+[tool.ruff.lint]
+# As regras são o conjunto padrão do Ruff 0.17 (já amplo: erros, bugs comuns,
+# imports, modernização, simplificações e parte das regras de segurança).
+# Nada foi desligado. Só acrescentamos:
+extend-select = [
+    "E501",  # linha longa demais (acima de 120 caracteres)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "lf"

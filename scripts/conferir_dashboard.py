@@ -61,8 +61,19 @@ def fotografar(pasta: Path) -> int:
     pasta.mkdir(parents=True, exist_ok=True)
     porta = _porta_livre()
     servidor = subprocess.Popen(
-        [sys.executable, "-m", "streamlit", "run", str(APP), "--server.headless", "true",
-         "--server.port", str(porta), "--server.address", "127.0.0.1"],
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(APP),
+            "--server.headless",
+            "true",
+            "--server.port",
+            str(porta),
+            "--server.address",
+            "127.0.0.1",
+        ],
         cwd=RAIZ,
     )
     try:

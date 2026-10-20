@@ -34,6 +34,7 @@ def gatilhos(workflow: dict) -> dict:
 
 # ---------- Quando roda ----------
 
+
 def test_roda_em_todo_pull_request_e_em_push_na_main(workflow):
     quando = gatilhos(workflow)
     assert "pull_request" in quando
@@ -45,6 +46,7 @@ def test_robo_so_tem_permissao_de_leitura(workflow):
 
 
 # ---------- O que o job "testar" faz ----------
+
 
 def test_usa_python_311(testar):
     [passo] = [p for p in testar["steps"] if str(p.get("uses", "")).startswith("actions/setup-python")]
@@ -80,6 +82,7 @@ def test_nenhuma_falha_e_escondida(testar):
 
 
 # ---------- O job "testar" não publica nem usa segredos ----------
+
 
 def test_testar_nao_usa_segredos_nem_token(testar):
     texto = yaml.safe_dump(testar)

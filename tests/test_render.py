@@ -35,6 +35,7 @@ def variaveis(servico) -> dict:
 
 # ---------- render.yaml ----------
 
+
 def test_servico_web_python_gratuito_na_main(servico):
     assert servico["type"] == "web"
     assert servico["runtime"] == "python"
@@ -67,6 +68,7 @@ def test_estatisticas_do_gradio_desligadas(servico):
 
 # ---------- Versão do Python ----------
 
+
 def test_python_version_e_311_e_igual_ao_readme_e_ao_workflow():
     versao = (RAIZ / ".python-version").read_text(encoding="utf-8").strip()
     assert versao == "3.11"
@@ -79,6 +81,7 @@ def test_python_version_e_311_e_igual_ao_readme_e_ao_workflow():
 
 
 # ---------- Endereço do servidor ----------
+
 
 def test_sem_port_escuta_so_no_proprio_computador():
     assert endereco_do_servidor({}) == ENDERECO_LOCAL == ("127.0.0.1", 7860)
@@ -98,9 +101,12 @@ def test_port_invalida_e_recusada(valor):
 
 # ---------- O app.py de verdade ----------
 
+
 def ambiente_sem_chaves(**extras) -> dict:
     ambiente = {k: v for k, v in os.environ.items() if k not in CHAVES_DE_IA}
-    ambiente.update({"GRADIO_ANALYTICS_ENABLED": "False", "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost"})
+    ambiente.update(
+        {"GRADIO_ANALYTICS_ENABLED": "False", "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost"}
+    )
     ambiente.update(extras)
     return ambiente
 
@@ -113,8 +119,13 @@ def porta_livre() -> int:
 
 def test_app_py_recusa_port_invalida():
     resultado = subprocess.run(
-        [sys.executable, "app.py"], cwd=RAIZ, env=ambiente_sem_chaves(PORT="abc"),
-        capture_output=True, text=True, timeout=120, check=False,
+        [sys.executable, "app.py"],
+        cwd=RAIZ,
+        env=ambiente_sem_chaves(PORT="abc"),
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
     )
     assert resultado.returncode == 1
     assert "PORT inválida" in resultado.stdout
@@ -123,8 +134,12 @@ def test_app_py_recusa_port_invalida():
 def test_app_py_abre_na_porta_do_render():
     porta = porta_livre()
     processo = subprocess.Popen(
-        [sys.executable, "app.py"], cwd=RAIZ, env=ambiente_sem_chaves(PORT=str(porta)),
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        [sys.executable, "app.py"],
+        cwd=RAIZ,
+        env=ambiente_sem_chaves(PORT=str(porta)),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
     )
     try:
         pagina = None

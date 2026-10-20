@@ -47,7 +47,8 @@ def main(argumentos: list[str] | None = None) -> int:
     print(f"[OK] Qualidade: {validados.relatorio.resumo()}")
     print(f"[OK] Unidades informadas pela API: {validados.unidades}")
     inconsistentes = densidades_inconsistentes(df)
-    print(f"[{'OK' if inconsistentes.empty else 'ATENÇÃO'}] Densidades que não batem com população ÷ área: {len(inconsistentes)}")
+    situacao = "OK" if inconsistentes.empty else "ATENÇÃO"
+    print(f"[{situacao}] Densidades que não batem com população ÷ área: {len(inconsistentes)}")
 
     print("\nIndicadores (Brasil):")
     for indicador in calcular(df, df).values():

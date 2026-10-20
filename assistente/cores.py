@@ -30,9 +30,7 @@ _FORMATO_HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 def validar_formato(cor: str) -> str:
     """Confere se a cor está no formato #RRGGBB e devolve em maiúsculas."""
     if not isinstance(cor, str) or not _FORMATO_HEX.match(cor):
-        raise ValueError(
-            f"cor inválida: {cor!r}. Use o formato #RRGGBB, por exemplo #2563EB."
-        )
+        raise ValueError(f"cor inválida: {cor!r}. Use o formato #RRGGBB, por exemplo #2563EB.")
     return cor.upper()
 
 
@@ -80,9 +78,7 @@ def sugerir_cor(cor: str, fundo: str, minimo: float) -> str:
     r, g, b = _para_rgb(cor)
     for passo in range(1, 101):
         t = passo / 100
-        candidata = _para_hex(
-            *(round(c + (a - c) * t) for c, a in zip((r, g, b), alvo, strict=True))
-        )
+        candidata = _para_hex(*(round(c + (a - c) * t) for c, a in zip((r, g, b), alvo, strict=True)))
         if contraste(candidata, fundo) >= minimo:
             return candidata
     return _para_hex(*alvo)

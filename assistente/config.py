@@ -106,9 +106,7 @@ class Geracao(_Secao):
     @model_validator(mode="after")
     def tempo_total_cobre_uma_tentativa(self) -> "Geracao":
         if self.tempo_maximo_total_segundos < self.timeout_segundos:
-            raise ValueError(
-                "tempo_maximo_total_segundos precisa ser maior ou igual a timeout_segundos"
-            )
+            raise ValueError("tempo_maximo_total_segundos precisa ser maior ou igual a timeout_segundos")
         return self
 
 
@@ -124,13 +122,9 @@ class Limites(_Secao):
     def por_pessoa_nao_passa_do_total(self) -> "Limites":
         problemas = []
         if self.perguntas_por_minuto_por_pessoa > self.perguntas_por_minuto_total:
-            problemas.append(
-                "perguntas_por_minuto_por_pessoa não pode ser maior que perguntas_por_minuto_total"
-            )
+            problemas.append("perguntas_por_minuto_por_pessoa não pode ser maior que perguntas_por_minuto_total")
         if self.perguntas_por_dia_por_pessoa > self.perguntas_por_dia_total:
-            problemas.append(
-                "perguntas_por_dia_por_pessoa não pode ser maior que perguntas_por_dia_total"
-            )
+            problemas.append("perguntas_por_dia_por_pessoa não pode ser maior que perguntas_por_dia_total")
         if problemas:
             raise ValueError("\n".join(problemas))
         return self
@@ -154,11 +148,7 @@ class Provedor(_Secao):
         repetidos = sorted({m for m in todos if todos.count(m) > 1})
         if repetidos:
             raise ValueError(f"modelo repetido no openrouter: {', '.join(repetidos)}")
-        problemas = [
-            f"{modelo!r}: {motivo}"
-            for modelo in todos
-            if (motivo := motivo_para_recusar_id(modelo))
-        ]
+        problemas = [f"{modelo!r}: {motivo}" for modelo in todos if (motivo := motivo_para_recusar_id(modelo))]
         if problemas:
             raise ValueError("; ".join(problemas))
         return self
@@ -197,6 +187,7 @@ class Configuracao(_Secao):
 
 
 # ---------- Mensagens de erro em português ----------
+
 
 def _traduzir(erro: dict) -> str:
     """Transforma um erro técnico do Pydantic em uma frase simples."""
@@ -262,6 +253,7 @@ def _problemas_do_pydantic(erro: ValidationError) -> list[str]:
 
 
 # ---------- Leitura do arquivo ----------
+
 
 def validar_dados(dados: object, raiz: Path = RAIZ_DO_PROJETO) -> Configuracao:
     """Valida dados já lidos do YAML. Útil para testes."""

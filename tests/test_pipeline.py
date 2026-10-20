@@ -52,20 +52,28 @@ MUNICIPIOS_FICTICIOS = [
 
 def resposta_ibge(municipios=MUNICIPIOS_FICTICIOS, ano="2022", nivel="N6"):
     """Monta uma resposta no formato da API de agregados v3 (dados fictícios)."""
-    variaveis = [("93", "População residente", "Pessoas", 2),
-                 ("6318", "Área da unidade territorial", "Quilômetros quadrados", 3),
-                 ("614", "Densidade demográfica", "Habitante por quilômetro quadrado", 4)]
+    variaveis = [
+        ("93", "População residente", "Pessoas", 2),
+        ("6318", "Área da unidade territorial", "Quilômetros quadrados", 3),
+        ("614", "Densidade demográfica", "Habitante por quilômetro quadrado", 4),
+    ]
     return [
         {
-            "id": id_, "variavel": nome, "unidade": unidade,
-            "resultados": [{
-                "classificacoes": [],
-                "series": [
-                    {"localidade": {"id": m[0], "nivel": {"id": nivel, "nome": "Município"}, "nome": m[1]},
-                     "serie": {ano: m[posicao]}}
-                    for m in municipios
-                ],
-            }],
+            "id": id_,
+            "variavel": nome,
+            "unidade": unidade,
+            "resultados": [
+                {
+                    "classificacoes": [],
+                    "series": [
+                        {
+                            "localidade": {"id": m[0], "nivel": {"id": nivel, "nome": "Município"}, "nome": m[1]},
+                            "serie": {ano: m[posicao]},
+                        }
+                        for m in municipios
+                    ],
+                }
+            ],
         }
         for id_, nome, unidade, posicao in variaveis
     ]
@@ -80,9 +88,13 @@ def df():
 # Fonte
 # =============================================================
 
+
 def test_url_da_consulta_usa_tabela_4714_ano_2022_tres_variaveis_e_todos_os_municipios():
     url = fonte.url_da_consulta()
-    assert url == "https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/93|6318|614?localidades=N6[all]"
+    assert (
+        url
+        == "https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/93|6318|614?localidades=N6[all]"
+    )
 
 
 def test_tabela_de_ufs_tem_as_27_unidades_e_cinco_regioes():
@@ -94,6 +106,7 @@ def test_tabela_de_ufs_tem_as_27_unidades_e_cinco_regioes():
 # =============================================================
 # Extração (requests simulado)
 # =============================================================
+
 
 def resposta_http(status=200, corpo=b"", json_=None):
     resposta = requests.Response()
@@ -198,11 +211,17 @@ def test_cache_evita_novo_download(tmp_path):
 # Validação (Pydantic)
 # =============================================================
 
+
 def test_validacao_normaliza_cada_municipio(df):
     validados = validar(resposta_ibge())
     primeiro = validados.registros[0]
     assert (primeiro.codigo_ibge, primeiro.municipio, primeiro.uf_sigla, primeiro.uf_nome, primeiro.regiao) == (
-        "3500001", "Cidade Teste Grande", "SP", "São Paulo", "Sudeste")
+        "3500001",
+        "Cidade Teste Grande",
+        "SP",
+        "São Paulo",
+        "Sudeste",
+    )
     assert (primeiro.ano, primeiro.populacao, primeiro.area_km2) == (2022, 1_000_000, 500.0)
     assert validados.relatorio.municipios_validos == 5 and not validados.relatorio.descartados
     assert validados.unidades["populacao"] == "Pessoas"
@@ -282,8 +301,18 @@ def test_area_ausente_e_aceita_mas_registrada():
 
 @pytest.mark.parametrize(
     ("texto", "numero"),
-    [("123", 123.0), ("1234.5", 1234.5), ("12,5", 12.5), ("-", 0.0), ("...", None), ("..", None),
-     ("X", None), ("", None), (None, None), ("abc", None)],
+    [
+        ("123", 123.0),
+        ("1234.5", 1234.5),
+        ("12,5", 12.5),
+        ("-", 0.0),
+        ("...", None),
+        ("..", None),
+        ("X", None),
+        ("", None),
+        (None, None),
+        ("abc", None),
+    ],
 )
 def test_converter_valores_especiais_do_ibge(texto, numero):
     assert converter_numero(texto) == numero
@@ -291,7 +320,11 @@ def test_converter_valores_especiais_do_ibge(texto, numero):
 
 @pytest.mark.parametrize(
     ("nome", "esperado"),
-    [("Rio de Janeiro - RJ", ("Rio de Janeiro", "RJ")), ("Embu-Guaçu - SP", ("Embu-Guaçu", "SP")), ("Sem UF", ("Sem UF", None))],
+    [
+        ("Rio de Janeiro - RJ", ("Rio de Janeiro", "RJ")),
+        ("Embu-Guaçu - SP", ("Embu-Guaçu", "SP")),
+        ("Sem UF", ("Sem UF", None)),
+    ],
 )
 def test_separar_nome_e_uf(nome, esperado):
     assert separar_nome_e_uf(nome) == esperado
@@ -301,9 +334,19 @@ def test_separar_nome_e_uf(nome, esperado):
 # Transformação (Pandas)
 # =============================================================
 
+
 def test_dataframe_tem_colunas_tipos_e_ordem_padronizados(df):
-    assert list(df.columns) == ["codigo_ibge", "municipio", "uf_sigla", "uf_nome", "regiao", "ano",
-                                "populacao", "area_km2", "densidade_hab_km2"]
+    assert list(df.columns) == [
+        "codigo_ibge",
+        "municipio",
+        "uf_sigla",
+        "uf_nome",
+        "regiao",
+        "ano",
+        "populacao",
+        "area_km2",
+        "densidade_hab_km2",
+    ]
     assert df["populacao"].dtype == "int64" and df["area_km2"].dtype == "float64"
     assert df["codigo_ibge"].dtype == "string"
     assert df["populacao"].is_monotonic_decreasing
@@ -363,6 +406,7 @@ def test_csv_para_planilhas_brasileiras(df):
 # Indicadores
 # =============================================================
 
+
 def test_indicadores_do_brasil(df):
     ind = calcular(df, df)
     assert ind["populacao_total"].valor == 1_460_000
@@ -411,6 +455,7 @@ def test_densidades_inconsistentes(df):
 # Execução completa (python -m pipeline)
 # =============================================================
 
+
 def test_pipeline_completo_mostra_resumo_e_salva_csv(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr("pipeline.executar.extrair", lambda cache=None: resposta_ibge())
     destino = tmp_path / "saida" / "municipios.csv"
@@ -447,8 +492,13 @@ def test_pipeline_nao_carrega_o_chatbot():
         "import sys, pipeline.executar; "
         "print(any(m == 'assistente' or m.startswith(('assistente.', 'gradio')) for m in sys.modules))"
     )
-    resultado = subprocess.run([sys.executable, "-c", codigo], capture_output=True, text=True, check=True,
-                               cwd=Path(__file__).resolve().parent.parent)
+    resultado = subprocess.run(
+        [sys.executable, "-c", codigo],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=Path(__file__).resolve().parent.parent,
+    )
     assert resultado.stdout.strip() == "False"
 
 

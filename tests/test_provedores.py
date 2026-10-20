@@ -50,6 +50,7 @@ def bloquear_rede(monkeypatch):
 
 # ---------- Ajudantes para montar respostas e erros simulados ----------
 
+
 def resposta_openai(texto):
     return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=texto))])
 
@@ -90,6 +91,7 @@ def provedor_simulado(nome="openrouter", chave=CHAVE_FALSA, resposta="Olá!", er
 # =============================================================
 # T3 — Cada provedor monta a requisição certa
 # =============================================================
+
 
 def test_openrouter_envia_modelo_instrucoes_temperatura_e_max_tokens():
     provedor = provedor_simulado("openrouter", resposta="Resposta do OpenRouter")
@@ -133,9 +135,7 @@ def test_anthropic_junta_so_os_blocos_de_texto():
 
 def test_cliente_real_do_openrouter_usa_o_endereco_certo_e_nao_repete_sozinho():
     # Criar o cliente não acessa a rede; só conferimos a configuração dele.
-    provedor = ProvedorCompativelComOpenAI(
-        "openrouter", "m", CHAVE_FALSA, GERACAO, endereco=ENDERECO_OPENROUTER
-    )
+    provedor = ProvedorCompativelComOpenAI("openrouter", "m", CHAVE_FALSA, GERACAO, endereco=ENDERECO_OPENROUTER)
     assert str(provedor.cliente.base_url).rstrip("/") == "https://openrouter.ai/api/v1"
     assert provedor.cliente.max_retries == 0
     assert provedor.cliente.timeout == GERACAO.timeout_segundos
@@ -154,6 +154,7 @@ def test_cliente_real_da_anthropic_nao_repete_sozinho():
 
 
 # ---------- Chaves lidas do ambiente ----------
+
 
 def test_criar_provedores_na_ordem_do_config_com_chaves_do_ambiente():
     ambiente = {
@@ -192,6 +193,7 @@ def test_provedor_desligado_no_config_nao_e_criado():
 # =============================================================
 # T3 — Classificação dos erros: temporário x configuração
 # =============================================================
+
 
 @pytest.mark.parametrize("sdk", [openai, anthropic], ids=["openai", "anthropic"])
 @pytest.mark.parametrize(
@@ -266,6 +268,7 @@ def test_resposta_vazia_e_falha_temporaria(nome):
 
 # ---------- A chave nunca aparece ----------
 
+
 @pytest.mark.parametrize("sdk,nome", [(openai, "openai"), (anthropic, "anthropic")])
 def test_chave_nunca_aparece_no_erro(sdk, nome):
     # Alguns provedores repetem parte da chave na mensagem de erro.
@@ -283,6 +286,7 @@ def test_chave_nunca_aparece_no_erro(sdk, nome):
 # =============================================================
 # Fallback (RF5, RF6, RF7)
 # =============================================================
+
 
 def test_se_o_primeiro_responde_o_segundo_nao_e_chamado():
     primeiro = provedor_simulado("openrouter", resposta="do primeiro")
@@ -347,7 +351,9 @@ def test_erro_de_chave_ou_cobranca_para_o_fallback(erro, tipo):
 
 def test_falha_temporaria_e_depois_cobranca_para_no_segundo():
     primeiro = provedor_simulado("openrouter", erro=erro_http(openai, 503))
-    segundo = provedor_simulado("anthropic", erro=erro_http(anthropic, 400, {"error": {"message": "Your credit balance is too low"}}))
+    segundo = provedor_simulado(
+        "anthropic", erro=erro_http(anthropic, 400, {"error": {"message": "Your credit balance is too low"}})
+    )
     terceiro = provedor_simulado("openai")
     with pytest.raises(SemResposta) as resultado:
         responder_com_fallback([primeiro, segundo, terceiro], MENSAGENS, INSTRUCOES)
@@ -383,6 +389,7 @@ def test_lista_vazia_de_provedores():
 
 # ---------- Logs (RF10) ----------
 
+
 def test_logs_mostram_provedores_mas_nunca_chave_nem_conversa(caplog):
     caplog.set_level(logging.INFO, logger="assistente.provedores")
     erro = erro_http(openai, 503, mensagem=f"erro com a chave {CHAVE_FALSA}")
@@ -410,6 +417,7 @@ def test_log_de_erro_de_configuracao_explica_o_que_fazer(caplog):
 
 
 # ---------- A rede está mesmo bloqueada ----------
+
 
 def test_rede_bloqueada_impede_chamada_real():
     # Se algum teste tentasse chamar a IA de verdade, falharia aqui (sem custo).

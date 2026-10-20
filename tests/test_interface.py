@@ -87,7 +87,9 @@ def config_com(**limites):
 
 
 def config_com_tema(tema, primaria="#2563EB", secundaria="#047857"):
-    aparencia = CONFIG.aparencia.model_copy(update={"tema": tema, "cor_primaria": primaria, "cor_secundaria": secundaria})
+    aparencia = CONFIG.aparencia.model_copy(
+        update={"tema": tema, "cor_primaria": primaria, "cor_secundaria": secundaria}
+    )
     return CONFIG.model_copy(update={"aparencia": aparencia})
 
 
@@ -105,7 +107,10 @@ def app_rodando(config=CONFIG, assistente=None):
     demo = criar_interface(config, assistente)
     porta = porta_livre()
     demo.launch(
-        prevent_thread_lock=True, server_name="127.0.0.1", server_port=porta, quiet=True,
+        prevent_thread_lock=True,
+        server_name="127.0.0.1",
+        server_port=porta,
+        quiet=True,
         **opcoes_de_lancamento(config),
     )
     try:
@@ -122,6 +127,7 @@ def visitante(endereco, ip=None):
 # =============================================================
 # Aparência a partir do config.yml
 # =============================================================
+
 
 def test_tema_usa_as_cores_do_config():
     tema = criar_tema(CONFIG)
@@ -156,8 +162,11 @@ def test_tema_escuro_usa_o_fundo_escuro():
 
 @pytest.mark.parametrize(("tema", "valor"), [("claro", "false"), ("escuro", "true")])
 def test_modo_claro_ou_escuro_e_forcado(tema, valor):
-    config = config_com_tema(tema, primaria="#2563EB" if tema == "claro" else "#60A5FA",
-                             secundaria="#047857" if tema == "claro" else "#34D399")
+    config = config_com_tema(
+        tema,
+        primaria="#2563EB" if tema == "claro" else "#60A5FA",
+        secundaria="#047857" if tema == "claro" else "#34D399",
+    )
     assert js_do_tema(config) == f"() => {{ document.body.classList.toggle('dark', {valor}); }}"
 
 
@@ -216,6 +225,7 @@ def test_opcoes_de_lancamento():
 # Conteúdo da tela
 # =============================================================
 
+
 def componentes(demo, tipo):
     return [b for b in demo.blocks.values() if isinstance(b, tipo)]
 
@@ -242,6 +252,7 @@ def test_conversa_nao_e_salva_e_exemplos_nao_sao_pre_calculados():
 # =============================================================
 # Experiência de uso (Módulo 2, Aula 1)
 # =============================================================
+
 
 @pytest.mark.parametrize("tema", ["claro", "escuro"])
 def test_texto_de_apoio_e_legivel_nos_dois_temas(tema):
@@ -306,7 +317,9 @@ def test_nova_conversa_fica_desligada_enquanto_a_ia_responde():
     botao, caixa = depois_de_mudar_a_conversa([{"role": "user", "content": "Oi"}])
     assert botao["interactive"] is False
     assert "placeholder" not in caixa  # a caixa continua como o Gradio deixou (bloqueada)
-    botao, caixa = depois_de_mudar_a_conversa([{"role": "user", "content": "Oi"}, {"role": "assistant", "content": "Olá"}])
+    botao, caixa = depois_de_mudar_a_conversa(
+        [{"role": "user", "content": "Oi"}, {"role": "assistant", "content": "Olá"}]
+    )
     assert botao["interactive"] is True
     assert caixa["placeholder"] == DICA_DA_CAIXA  # o Gradio apaga a dica ao enviar
 
@@ -321,6 +334,7 @@ def test_so_o_chat_e_api_publica():
 # =============================================================
 # Função de resposta
 # =============================================================
+
 
 class AssistenteQueAnota:
     def __init__(self, texto="ok", erro=None):
@@ -362,6 +376,7 @@ def test_erro_inesperado_vira_mensagem_amigavel_sem_vazar_detalhes(caplog):
 # =============================================================
 # App de verdade, aberto no computador (127.0.0.1)
 # =============================================================
+
 
 def test_pagina_abre_no_navegador_com_o_nome_e_as_cores():
     with app_rodando() as app:
@@ -429,13 +444,19 @@ def test_erro_inesperado_aparece_como_mensagem_amigavel_na_tela():
 # app.py
 # =============================================================
 
+
 def test_app_py_carrega_sem_chaves_e_sem_abrir_o_servidor():
     # Importar o app.py monta a tela, mas só "python app.py" abre o servidor.
     ambiente = {k: v for k, v in os.environ.items() if not k.endswith("_API_KEY")}
     ambiente["GRADIO_ANALYTICS_ENABLED"] = "False"
     resultado = subprocess.run(
         [sys.executable, "-c", "import app; print(type(app.demo).__name__)"],
-        cwd=RAIZ_DO_PROJETO, capture_output=True, text=True, env=ambiente, timeout=120, check=False,
+        cwd=RAIZ_DO_PROJETO,
+        capture_output=True,
+        text=True,
+        env=ambiente,
+        timeout=120,
+        check=False,
     )
     assert resultado.returncode == 0, resultado.stderr
     assert "Blocks" in resultado.stdout

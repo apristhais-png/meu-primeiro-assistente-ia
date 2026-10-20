@@ -76,6 +76,7 @@ def perguntar(limitador, vezes, cabecalhos=None, pergunta="O que é ETL?"):
 # Limites globais (sempre ativos)
 # =============================================================
 
+
 def test_limite_global_por_minuto_bloqueia_todo_mundo():
     limitador, relogio = criar(perguntas_por_minuto_total=3, perguntas_por_minuto_por_pessoa=3)
     assert limitador.verificar("1", de(PESSOA_A)).permitido
@@ -130,9 +131,7 @@ def test_pergunta_longa_nao_gasta_a_cota():
 
 
 def test_sem_identificacao_vale_so_o_limite_global():
-    limitador, _ = criar(
-        identificar_por_ip=False, perguntas_por_minuto_total=10, perguntas_por_minuto_por_pessoa=2
-    )
+    limitador, _ = criar(identificar_por_ip=False, perguntas_por_minuto_total=10, perguntas_por_minuto_por_pessoa=2)
     # A mesma pessoa passa do limite "por pessoa" (2), porque ele está desligado...
     decisoes = perguntar(limitador, 10, de(PESSOA_A))
     assert all(d.permitido for d in decisoes)
@@ -144,6 +143,7 @@ def test_sem_identificacao_vale_so_o_limite_global():
 # =============================================================
 # Identificação segura (identificar_por_ip: true)
 # =============================================================
+
 
 def test_um_ip_no_x_forwarded_for_identifica_a_pessoa():
     assert ip_confiavel(de(PESSOA_A)) == (PESSOA_A, 1)
@@ -214,6 +214,7 @@ def test_nome_do_cabecalho_nao_depende_de_maiusculas():
 # Limites por pessoa
 # =============================================================
 
+
 def test_limite_por_minuto_da_pessoa_e_liberado_depois_de_um_minuto():
     limitador, relogio = criar()
     decisoes = perguntar(limitador, 6, de(PESSOA_A))
@@ -254,6 +255,7 @@ def test_pergunta_bloqueada_nao_gasta_a_cota_global():
 # =============================================================
 # Privacidade e segurança
 # =============================================================
+
 
 def test_logs_mostram_o_identificador_e_os_itens_mas_nunca_o_ip_nem_a_pergunta(caplog):
     caplog.set_level(logging.INFO, logger="assistente.limites")

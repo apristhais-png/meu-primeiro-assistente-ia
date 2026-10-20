@@ -8,6 +8,7 @@ from assistente import cores
 
 # ---------- Formato da cor ----------
 
+
 @pytest.mark.parametrize("cor", ["azul", "#12", "2563EB", "#GGGGGG", "#2563EB0", "", None])
 def test_recusa_cor_em_formato_errado(cor):
     with pytest.raises(ValueError, match="#RRGGBB"):
@@ -19,6 +20,7 @@ def test_aceita_letras_minusculas_e_devolve_em_maiusculas():
 
 
 # ---------- Cálculo de contraste ----------
+
 
 def test_contraste_de_casos_conhecidos():
     assert cores.contraste("#000000", "#FFFFFF") == pytest.approx(21.0)
@@ -37,6 +39,7 @@ def test_contraste_das_cores_citadas_na_spec():
 
 
 # ---------- Cor do texto dos botões ----------
+
 
 def test_botao_azul_escuro_tem_texto_branco():
     assert cores.cor_do_texto_do_botao("#2563EB") == "#FFFFFF"
@@ -60,6 +63,7 @@ def test_texto_do_botao_e_sempre_legivel():
 
 
 # ---------- Validação das cores no tema ----------
+
 
 def test_cores_do_exemplo_da_spec_passam_no_tema_claro():
     assert cores.verificar_cores("#2563EB", "#047857", "claro") == []
@@ -120,6 +124,7 @@ def test_formato_invalido_e_recusado_na_validacao():
 
 
 # ---------- Sugestão de cor ----------
+
 
 @pytest.mark.parametrize(
     ("cor", "tema", "minimo"),

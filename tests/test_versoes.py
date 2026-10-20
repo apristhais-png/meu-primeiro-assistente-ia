@@ -55,6 +55,7 @@ def arquivos_do_git() -> list[Path]:
 
 # ---------- requirements.txt ----------
 
+
 def test_gradio_fixado_com_igual_igual_uma_unica_vez():
     assert re.fullmatch(r"\d+\.\d+\.\d+", versao_fixada_do_gradio())
 
@@ -63,7 +64,9 @@ def test_todas_as_bibliotecas_tem_versao_fixada():
     # Versões fixas: o que é testado é exatamente o que será publicado.
     for nome in ("requirements.txt", "requirements-dev.txt", "requirements-dados.txt"):
         for linha in linhas_de_requisitos(nome):
-            assert re.fullmatch(r"[A-Za-z0-9_.\-\[\]]+==[0-9][0-9A-Za-z.]*", linha), f"{nome}: fixe com '==' → {linha!r}"
+            assert re.fullmatch(r"[A-Za-z0-9_.\-\[\]]+==[0-9][0-9A-Za-z.]*", linha), (
+                f"{nome}: fixe com '==' → {linha!r}"
+            )
 
 
 def test_bibliotecas_repetidas_tem_a_mesma_versao_em_todos_os_arquivos():
@@ -83,6 +86,7 @@ def test_requirements_dev_nao_lista_o_gradio():
 
 
 # ---------- Cabeçalho do README.md (Hugging Face) ----------
+
 
 def test_cabecalho_usa_gradio_app_py_e_python_311():
     dados = cabecalho_do_readme()
@@ -108,6 +112,7 @@ def test_campos_do_cabecalho_seguem_as_regras_do_hugging_face():
 
 # ---------- Nenhum outro arquivo com versão diferente ----------
 
+
 def test_nenhum_arquivo_fixa_outra_versao_do_gradio():
     esperada = versao_fixada_do_gradio()
     diferentes = []
@@ -127,11 +132,11 @@ def test_nenhum_arquivo_fixa_outra_versao_do_gradio():
 
 # ---------- O que está instalado é o que será publicado ----------
 
+
 def test_gradio_instalado_e_o_mesmo_do_requirements():
     instalada = version("gradio")
     assert instalada == versao_fixada_do_gradio(), (
-        f"Gradio instalado ({instalada}) é diferente do requirements.txt. "
-        "Rode: pip install -r requirements.txt"
+        f"Gradio instalado ({instalada}) é diferente do requirements.txt. Rode: pip install -r requirements.txt"
     )
 
 

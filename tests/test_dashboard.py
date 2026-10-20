@@ -60,6 +60,7 @@ def api_simulada(monkeypatch, tmp_path):
 # Carga dos dados (pipeline → dashboard)
 # =============================================================
 
+
 def test_carregar_base_usa_o_pipeline_e_traz_relatorio_de_qualidade(api_simulada):
     base = dados.carregar_base()
     assert len(base.municipios) == 5
@@ -93,7 +94,10 @@ def test_copia_local_estragada_e_trocada_por_um_download_novo(tmp_path, monkeypa
     ("erro", "mensagem"),
     [
         (ErroDeExtracao("a API do IBGE demorou demais para responder", temporario=True), dados.MENSAGEM_SEM_CONEXAO),
-        (ErroDeExtracao("a API do IBGE está com problemas (503)", temporario=True, status=503), dados.MENSAGEM_SEM_CONEXAO),
+        (
+            ErroDeExtracao("a API do IBGE está com problemas (503)", temporario=True, status=503),
+            dados.MENSAGEM_SEM_CONEXAO,
+        ),
         (ErroDeExtracao("consulta não encontrada (404)", status=404), dados.MENSAGEM_RECUSADA),
         (ErroDeExtracao("a API do IBGE respondeu, mas não com um JSON válido"), dados.MENSAGEM_FALHA),
     ],
@@ -120,6 +124,7 @@ def test_resposta_fora_do_formato_vira_mensagem_amigavel(tmp_path, monkeypatch):
 # Filtros
 # =============================================================
 
+
 def test_filtros_recusam_valores_invalidos():
     with pytest.raises(ValueError, match="agrupamento"):
         dados.Filtros(agrupar_por="municipio")
@@ -135,8 +140,11 @@ def test_opcoes_de_regioes_seguem_a_ordem_oficial(todos):
 
 def test_opcoes_de_ufs_dependem_da_regiao(todos):
     assert dados.opcoes_de_ufs(todos) == {
-        "AM": "AM — Amazonas", "BA": "BA — Bahia", "PR": "PR — Paraná",
-        "RJ": "RJ — Rio de Janeiro", "SP": "SP — São Paulo",
+        "AM": "AM — Amazonas",
+        "BA": "BA — Bahia",
+        "PR": "PR — Paraná",
+        "RJ": "RJ — Rio de Janeiro",
+        "SP": "SP — São Paulo",
     }
     assert list(dados.opcoes_de_ufs(todos, ("Sudeste",))) == ["RJ", "SP"]
 
@@ -200,6 +208,7 @@ def test_descrever_filtros(todos):
 # Tabelas e exportação
 # =============================================================
 
+
 def test_tabela_de_municipios_tem_codigo_oficial_e_numeros_no_padrao_brasileiro(todos):
     estilo = dados.tabela_de_municipios(todos)
     assert list(estilo.data.columns) == list(dados.COLUNAS_TABELA.values())
@@ -213,13 +222,20 @@ def test_tabela_de_municipios_tem_codigo_oficial_e_numeros_no_padrao_brasileiro(
 
 def test_tabela_de_grupos(todos):
     estilo = dados.tabela_de_grupos(agregar(todos, "regiao"), "regiao")
-    assert list(estilo.data.columns) == ["Região", "Municípios", "População (pessoas)", "Área (km²)", "Densidade (hab/km²)"]
+    assert list(estilo.data.columns) == [
+        "Região",
+        "Municípios",
+        "População (pessoas)",
+        "Área (km²)",
+        "Densidade (hab/km²)",
+    ]
     assert "1.300.000" in estilo.to_html()
 
 
 # =============================================================
 # Gráficos
 # =============================================================
+
 
 def test_grafico_ranking(todos):
     figura = graficos.grafico_ranking(maiores(todos, 3))
@@ -267,6 +283,7 @@ def test_altura_do_grafico_cresce_com_o_numero_de_barras():
 # =============================================================
 # Tela (Streamlit AppTest, API simulada)
 # =============================================================
+
 
 @pytest.fixture
 def app(api_simulada):
@@ -336,8 +353,9 @@ def test_limpar_filtros(app):
 
 def test_estado_vazio(api_simulada, monkeypatch):
     original = dados.montar_selecao
-    monkeypatch.setattr(dados, "montar_selecao",
-                        lambda todos, filtros: original(todos, dados.Filtros(municipios=("0000000",))))
+    monkeypatch.setattr(
+        dados, "montar_selecao", lambda todos, filtros: original(todos, dados.Filtros(municipios=("0000000",)))
+    )
     st.cache_data.clear()
     tela = AppTest.from_file(APP, default_timeout=60).run()
     assert not tela.exception
@@ -376,6 +394,7 @@ def test_cache_evita_novo_download_quando_os_filtros_mudam(app, api_simulada):
 # =============================================================
 # Independência do chatbot (Produto A)
 # =============================================================
+
 
 def test_dashboard_nao_importa_o_chatbot():
     codigo = (

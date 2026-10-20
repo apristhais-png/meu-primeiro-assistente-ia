@@ -76,21 +76,11 @@ VARIAVEIS_DE_CHAVE = {
 
 ENDERECO_OPENROUTER = "https://openrouter.ai/api/v1"
 
-MENSAGEM_SEM_RESPOSTA = (
-    "Desculpe, não consegui responder agora. Tente novamente em alguns minutos."
-)
-MENSAGEM_DEMORA = (
-    "O modelo gratuito está demorando mais que o normal. Tente novamente em instantes."
-)
-MENSAGEM_MUITOS_PEDIDOS = (
-    "O modelo gratuito recebeu muitas perguntas agora. Aguarde um minuto e tente novamente."
-)
-MENSAGEM_OCUPADO = (
-    "Muitas perguntas estão sendo respondidas agora. Tente novamente em instantes."
-)
-MENSAGEM_SEM_MODELO = (
-    "Nenhum modelo gratuito adequado está disponível agora. Tente novamente mais tarde."
-)
+MENSAGEM_SEM_RESPOSTA = "Desculpe, não consegui responder agora. Tente novamente em alguns minutos."
+MENSAGEM_DEMORA = "O modelo gratuito está demorando mais que o normal. Tente novamente em instantes."
+MENSAGEM_MUITOS_PEDIDOS = "O modelo gratuito recebeu muitas perguntas agora. Aguarde um minuto e tente novamente."
+MENSAGEM_OCUPADO = "Muitas perguntas estão sendo respondidas agora. Tente novamente em instantes."
+MENSAGEM_SEM_MODELO = "Nenhum modelo gratuito adequado está disponível agora. Tente novamente mais tarde."
 # Acrescentada ao fim de uma resposta cortada pelo limite de tamanho.
 NOTA_RESPOSTA_INCOMPLETA = "\n\n_(A resposta ficou incompleta. Peça para eu continuar.)_"
 
@@ -114,8 +104,14 @@ id_da_pergunta: contextvars.ContextVar[str] = contextvars.ContextVar("id_da_perg
 
 # Tipos de falha e se permitem tentar o próximo provedor.
 FALHAS_TEMPORARIAS = {
-    "tempo_esgotado", "conexao", "limite_de_uso", "servidor", "resposta_vazia",
-    "resposta_inadequada", "sem_vaga", "sem_modelo_adequado",
+    "tempo_esgotado",
+    "conexao",
+    "limite_de_uso",
+    "servidor",
+    "resposta_vazia",
+    "resposta_inadequada",
+    "sem_vaga",
+    "sem_modelo_adequado",
 }
 FALHAS_QUE_PARAM = {"autenticacao", "permissao", "cobranca", "requisicao_invalida", "inesperada"}
 
@@ -205,6 +201,7 @@ class SemResposta(Exception):
 
 # ---------- Classificação dos erros ----------
 
+
 def _tem_sinal_de_cobranca(corpo: object) -> bool:
     try:
         texto = json.dumps(corpo, default=str).lower()
@@ -240,6 +237,7 @@ def classificar_erro(provedor: str, erro: Exception) -> FalhaDoProvedor:
 
 
 # ---------- Provedores ----------
+
 
 class Provedor:
     """Base comum: guarda nome, modelo, chave e ajustes; trata os erros."""
@@ -305,7 +303,10 @@ class Provedor:
         # Só dados técnicos no log: nunca o texto da pergunta ou da resposta.
         logger.info(
             "ia_detalhes id=%s provedor=%s modelo_servido=%s fim=%s tokens_saida=%s raciocinio=%s",
-            id_da_pergunta.get(), self.nome, saida.modelo_servido or "-", saida.motivo_do_fim or "-",
+            id_da_pergunta.get(),
+            self.nome,
+            saida.modelo_servido or "-",
+            saida.motivo_do_fim or "-",
             saida.tokens_saida if saida.tokens_saida is not None else "-",
             "sim" if saida.teve_raciocinio else "nao",
         )
@@ -422,7 +423,8 @@ class ProvedorOpenRouter(ProvedorCompativelComOpenAI):
             # volta a usar os modelos bloqueados.
             logger.warning(
                 "ia_modelos id=%s resultado=todos_em_quarentena modelos=%s",
-                id_da_pergunta.get(), ",".join(self.modelos),
+                id_da_pergunta.get(),
+                ",".join(self.modelos),
             )
             raise FalhaDoProvedor(self.nome, "sem_modelo_adequado")
         tempo_do_catalogo = 4.0 if prazo is None else max(0.5, min(4.0, prazo / 4))
@@ -431,7 +433,9 @@ class ProvedorOpenRouter(ProvedorCompativelComOpenAI):
             # Sem catálogo: segue com a lista do config.yml. O preço máximo
             # zero no pedido continua impedindo qualquer cobrança.
             escolhidos = candidatos
-            logger.warning("ia_modelos id=%s catalogo=indisponivel usando=%s", id_da_pergunta.get(), ",".join(escolhidos))
+            logger.warning(
+                "ia_modelos id=%s catalogo=indisponivel usando=%s", id_da_pergunta.get(), ",".join(escolhidos)
+            )
         else:
             escolhidos, recusados = avaliacao
             for modelo, motivo in recusados.items():
@@ -514,8 +518,12 @@ def criar_provedores(config: Configuracao, ambiente: Mapping[str, str] | None = 
         elif item.nome == "openrouter":
             provedores.append(
                 ProvedorOpenRouter(
-                    item.nome, item.modelo, chave, config.geracao,
-                    endereco=ENDERECO_OPENROUTER, modelos_reserva=item.modelos_reserva,
+                    item.nome,
+                    item.modelo,
+                    chave,
+                    config.geracao,
+                    endereco=ENDERECO_OPENROUTER,
+                    modelos_reserva=item.modelos_reserva,
                 )
             )
         else:
@@ -524,6 +532,7 @@ def criar_provedores(config: Configuracao, ambiente: Mapping[str, str] | None = 
 
 
 # ---------- Fallback ----------
+
 
 class _PrazoEsgotado(Exception):
     pass
@@ -682,7 +691,9 @@ def responder_com_fallback(
                     texto = _chamar_provedor(provedor, mensagens, instrucoes, None)
                 else:
                     texto = _executar_com_prazo(
-                        lambda ao_iniciar, p=provedor, s=prazo: _chamar_provedor(p, mensagens, instrucoes, s, ao_iniciar),
+                        lambda ao_iniciar, p=provedor, s=prazo: _chamar_provedor(
+                            p, mensagens, instrucoes, s, ao_iniciar
+                        ),
                         prazo,
                         sobra_total=sobra,
                     )
@@ -694,7 +705,9 @@ def responder_com_fallback(
                 tentativas.append(Tentativa(provedor.nome, "sem_vaga"))
                 logger.warning(
                     "ia_chamada id=%s provedor=%s resultado=sem_vaga em_andamento=%d",
-                    id_da_pergunta.get(), provedor.nome, chamadas_em_andamento(),
+                    id_da_pergunta.get(),
+                    provedor.nome,
+                    chamadas_em_andamento(),
                 )
                 raise SemResposta(tentativas, erro_de_configuracao=False) from None
             except FalhaDoProvedor as erro:
@@ -707,7 +720,10 @@ def responder_com_fallback(
                 tentativas.append(Tentativa(provedor.nome, "respondeu"))
                 logger.info(
                     "ia_chamada id=%s provedor=%s tentativa=%d resultado=sucesso duracao_ms=%d",
-                    id_da_pergunta.get(), provedor.nome, vez, duracao_ms,
+                    id_da_pergunta.get(),
+                    provedor.nome,
+                    vez,
+                    duracao_ms,
                 )
                 logger.info("Provedor %s respondeu.", provedor.nome)
                 return Resposta(texto, provedor.nome, tentativas)
@@ -715,7 +731,12 @@ def responder_com_fallback(
             tentativas.append(Tentativa(provedor.nome, falha.tipo))
             logger.warning(
                 "ia_chamada id=%s provedor=%s tentativa=%d resultado=%s status=%s duracao_ms=%d",
-                id_da_pergunta.get(), provedor.nome, vez, falha.tipo, falha.status or "-", duracao_ms,
+                id_da_pergunta.get(),
+                provedor.nome,
+                vez,
+                falha.tipo,
+                falha.status or "-",
+                duracao_ms,
             )
             if not falha.temporaria:
                 logger.error(

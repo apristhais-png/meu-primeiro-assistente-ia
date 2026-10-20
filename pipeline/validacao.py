@@ -43,6 +43,7 @@ class ErroDeValidacao(Exception):
 
 # ---------- Modelos do JSON bruto (o que a API devolve) ----------
 
+
 class _Modelo(BaseModel):
     model_config = ConfigDict(extra="ignore")  # campos novos da API não quebram o pipeline
 
@@ -79,6 +80,7 @@ RespostaIBGE = TypeAdapter(list[VariavelIBGE])
 
 
 # ---------- Registro normalizado (uma linha por município) ----------
+
 
 class RegistroMunicipio(_Modelo):
     codigo_ibge: str = Field(pattern=r"^\d{7}$")
@@ -118,7 +120,9 @@ class RelatorioDeQualidade:
         if self.descartados:
             partes.append("descartados: " + ", ".join(f"{m} ({n})" for m, n in sorted(self.descartados.items())))
         if self.valores_ausentes:
-            partes.append("valores ausentes: " + ", ".join(f"{c} ({n})" for c, n in sorted(self.valores_ausentes.items())))
+            partes.append(
+                "valores ausentes: " + ", ".join(f"{c} ({n})" for c, n in sorted(self.valores_ausentes.items()))
+            )
         if self.duplicados_removidos:
             partes.append(f"duplicados removidos: {self.duplicados_removidos}")
         return "; ".join(partes)
@@ -157,6 +161,7 @@ def separar_nome_e_uf(nome: str) -> tuple[str, str | None]:
 
 
 # ---------- Validação principal ----------
+
 
 def validar(bruto: object, ano: str = PERIODO, variaveis: tuple[Variavel, ...] = VARIAVEIS) -> DadosValidados:
     """JSON bruto da API → registros validados + relatório de qualidade."""
