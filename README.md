@@ -184,7 +184,8 @@ As versões das bibliotecas estão em dois formatos, sempre iguais (um teste con
 | `requirements.txt` | Chatbot (Gradio, OpenAI, Anthropic…) | **Render** (`pip install -r requirements.txt`) e CI |
 | `requirements-dados.txt` | Pipeline e dashboard (Requests, Pandas, Streamlit, Plotly) | CI e quem não usa o Poetry |
 | `requirements-dev.txt` | Testes e qualidade (pytest, pytest-cov, Ruff…) | CI e quem não usa o Poetry |
-| `pyproject.toml` + `poetry.lock` | Os três acima: principais = chatbot, grupo `dados`, grupo `dev` | Poetry (seu computador) |
+| `requirements-docs.txt` | Documentação (MkDocs e tema Material) | CI da documentação e quem não usa o Poetry |
+| `pyproject.toml` + `poetry.lock` | Os quatro acima: principais = chatbot, grupos `dados`, `dev` e `docs` | Poetry (seu computador) |
 
 ### Instalação local × publicação no Render
 
@@ -351,6 +352,27 @@ instala o projeto do zero com o Poetry e simula a instalação do Render.
 
 **Nunca** coloque chaves no `config.yml`, no código ou em qualquer arquivo
 enviado ao GitHub.
+
+## Site de documentação (MkDocs Material)
+
+A documentação completa, em português, fica na pasta `docs/` e vira um site
+com o **MkDocs** e o tema **Material**: apresentação, arquitetura, ambiente
+(pipx, Poetry, pyenv, Windows 11), API do IBGE, extração, validação,
+transformação, dashboard, Professor de Dados, testes, cobertura, Ruff,
+segurança, execução local, publicação e limitações.
+
+```powershell
+poetry install --with docs        # ou: pip install -r requirements-docs.txt
+poetry run mkdocs serve           # abre em http://127.0.0.1:8000 e atualiza ao salvar
+poetry run mkdocs build --strict  # gera a pasta site/ e falha se houver link quebrado
+```
+
+- Configuração: `mkdocs.yml`. As páginas são arquivos Markdown em `docs/`.
+- Em todo Pull Request que mexe na documentação, o workflow `docs.yml` roda
+  `mkdocs build --strict` e guarda o site gerado como artefato (7 dias).
+- **GitHub Pages ainda não está ativado**: depende de autorização. Os passos
+  estão em `docs/publicar.md`.
+- O MkDocs não é instalado no Render e não muda nada no chatbot.
 
 ## Documentação do projeto
 
