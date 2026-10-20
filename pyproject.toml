@@ -12,6 +12,7 @@
 #   requirements.txt        <->  [project] dependencies   (chatbot / Render)
 #   requirements-dados.txt  <->  grupo "dados"            (pipeline + dashboard)
 #   requirements-dev.txt    <->  grupo "dev"              (testes e Ruff)
+#   requirements-docs.txt   <->  grupo "docs"             (site MkDocs)
 #
 # Para mudar uma versão: altere o requirements*.txt E este arquivo, depois
 # rode "poetry lock" e confira com "pytest tests/test_poetry.py".
@@ -41,7 +42,7 @@ dependencies = [
 package-mode = false
 
 # Os grupos são opcionais: "poetry install" instala só o chatbot (o mesmo
-# conjunto do Render); "poetry install --with dados,dev" instala tudo.
+# conjunto do Render); "poetry install --with dados,dev,docs" instala tudo.
 
 # Pipeline do IBGE e dashboard (Produto B) = requirements-dados.txt.
 # O pydantic já está nas dependências principais (mesma versão).
@@ -64,6 +65,14 @@ pytest-cov = "7.1.0"
 httpx2 = "2.13.1"
 huggingface-hub = "2.2.0"
 ruff = "0.17.0"
+
+# Site de documentação (MkDocs + Material) = requirements-docs.txt.
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "1.6.1"
+mkdocs-material = "9.7.7"
 
 [build-system]
 requires = ["poetry-core>=2.0,<3.0"]
@@ -92,7 +101,7 @@ skip_covered = false
 [tool.ruff]
 target-version = "py311"
 line-length = 120
-extend-exclude = ["dados"]
+extend-exclude = ["dados", "site"]
 
 [tool.ruff.lint]
 # As regras são o conjunto padrão do Ruff 0.17 (já amplo: erros, bugs comuns,

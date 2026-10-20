@@ -1,0 +1,12 @@
+# Bibliotecas da documentação (site MkDocs com o tema Material).
+# NÃO são instaladas pelo Render nem pelo job "testar".
+# Instale para ver ou gerar o site:
+#   pip install -r requirements-docs.txt
+#   mkdocs serve            (http://127.0.0.1:8000)
+#   mkdocs build --strict   (gera a pasta site/)
+
+# Gerador do site
+mkdocs==1.6.1
+
+# Tema Material (traz as extensões pymdown usadas no mkdocs.yml)
+mkdocs-material==9.7.7
