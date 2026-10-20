@@ -60,6 +60,7 @@ def test_usa_python_311(testar):
         "pip check",
         "python scripts/verificar_segredos.py",
         "ruff check .",
+        "ruff format --check .",
         "python scripts/validar_config.py",
         "pytest",
         "-r requirements-dados.txt",
