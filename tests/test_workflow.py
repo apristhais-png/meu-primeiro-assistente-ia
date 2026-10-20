@@ -60,6 +60,9 @@ def test_usa_python_311(testar):
         "ruff check .",
         "python scripts/validar_config.py",
         "pytest",
+        "-r requirements-dados.txt",
+        "--cov=pipeline",
+        "--cov-fail-under=80",
     ],
 )
 def test_faz_todas_as_verificacoes(testar, comando):

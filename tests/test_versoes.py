@@ -61,9 +61,20 @@ def test_gradio_fixado_com_igual_igual_uma_unica_vez():
 
 def test_todas_as_bibliotecas_tem_versao_fixada():
     # Versões fixas: o que é testado é exatamente o que será publicado.
-    for nome in ("requirements.txt", "requirements-dev.txt"):
+    for nome in ("requirements.txt", "requirements-dev.txt", "requirements-dados.txt"):
         for linha in linhas_de_requisitos(nome):
             assert re.fullmatch(r"[A-Za-z0-9_.\-\[\]]+==[0-9][0-9A-Za-z.]*", linha), f"{nome}: fixe com '==' → {linha!r}"
+
+
+def test_bibliotecas_repetidas_tem_a_mesma_versao_em_todos_os_arquivos():
+    # Ex.: o pydantic aparece no requirements.txt (chatbot) e no requirements-dados.txt (pipeline).
+    versoes: dict[str, set[str]] = {}
+    for nome in ("requirements.txt", "requirements-dev.txt", "requirements-dados.txt"):
+        for linha in linhas_de_requisitos(nome):
+            pacote, versao = linha.split("==")
+            versoes.setdefault(pacote.lower(), set()).add(versao)
+    diferentes = {pacote: v for pacote, v in versoes.items() if len(v) > 1}
+    assert diferentes == {}, f"Versões diferentes entre os arquivos: {diferentes}"
 
 
 def test_requirements_dev_nao_lista_o_gradio():

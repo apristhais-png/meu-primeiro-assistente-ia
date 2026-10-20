@@ -61,6 +61,22 @@ Acima da conversa há dois seletores:
   depois que a página é fechada ou a conversa é reiniciada; não há cadastro
   nem banco de dados.
 
+## Pipeline de dados do IBGE (Produto B, em construção)
+
+A pasta `pipeline/` busca dados oficiais do **Censo 2022 do IBGE** (população,
+área e densidade de todos os municípios) e os prepara para análise:
+
+**requests** (busca) → **Pydantic** (confere o formato) → **Pandas** (organiza) → **indicadores**
+
+```bash
+pip install -r requirements.txt -r requirements-dados.txt -r requirements-dev.txt
+python -m pipeline --csv dados/municipios.csv   # precisa de internet
+```
+
+- O pipeline é independente do chatbot: um não importa o outro.
+- O Render continua instalando só o `requirements.txt` (o do chatbot).
+- Plano completo e auditoria: `docs/auditoria.md`.
+
 ## Como rodar no seu computador
 
 Na pasta do projeto:

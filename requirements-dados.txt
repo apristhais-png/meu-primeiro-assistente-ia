@@ -1,0 +1,13 @@
+# Bibliotecas do pipeline de dados e do dashboard (Produto B).
+# NÃO são instaladas pelo Render: o chatbot (Produto A) usa só o requirements.txt.
+# Instale junto com as outras para rodar o pipeline e os testes:
+#   pip install -r requirements.txt -r requirements-dados.txt -r requirements-dev.txt
+
+# Requisições HTTP GET à API do IBGE
+requests==2.34.2
+
+# Validação dos dados (MESMA versão do requirements.txt; um teste confere)
+pydantic==2.14.0
+
+# Transformação e análise dos dados (mesma versão que o Gradio já instala)
+pandas==3.0.6

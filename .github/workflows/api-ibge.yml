@@ -1,0 +1,50 @@
+# =============================================================
+# Validação REAL do pipeline com a API do IBGE
+# =============================================================
+# Roda só em Pull Requests que mexem no pipeline (e quando alguém pede, em
+# "Run workflow"). NÃO roda em push na main, então não participa do
+# "After CI Checks Pass" do Render e nunca atrasa a publicação do chatbot.
+#
+# Ele acessa a internet de verdade (API pública do IBGE, sem chave):
+# por isso fica separado do job "testar", que nunca depende de serviços externos.
+# Não usa segredos e não publica nada.
+# =============================================================
+
+name: Validação real da API do IBGE
+
+on:
+  pull_request:
+    paths:
+      - "pipeline/**"
+      - "requirements-dados.txt"
+      - ".github/workflows/api-ibge.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-ibge:
+    name: api-ibge
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Instalar Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dados.txt
+
+      - name: Instalar as bibliotecas do pipeline
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dados.txt
+
+      - name: Rodar o pipeline com a API real do IBGE
+        run: python -m pipeline --csv dados/municipios.csv

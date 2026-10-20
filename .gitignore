@@ -32,3 +32,12 @@ flagged/
 Thumbs.db
 .vscode/
 .idea/
+
+# Dados baixados pelo pipeline (python -m pipeline --cache/--csv)
+dados/
+
+# Relatórios de cobertura dos testes (pytest-cov)
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
