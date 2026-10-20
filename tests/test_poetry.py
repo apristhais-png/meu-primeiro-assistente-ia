@@ -7,6 +7,7 @@ que é testado deixa de ser o que é publicado. Estes testes impedem isso:
     requirements.txt        <->  [project] dependencies
     requirements-dados.txt  <->  [tool.poetry.group.dados.dependencies]
     requirements-dev.txt    <->  [tool.poetry.group.dev.dependencies]
+    requirements-docs.txt   <->  [tool.poetry.group.docs.dependencies]
 
 E conferem que o poetry.lock trava exatamente essas versões. (O workflow
 poetry.yml roda também "poetry check --lock" e uma instalação completa.)
@@ -75,17 +76,25 @@ def test_grupo_dev_e_o_requirements_dev_txt(pyproject):
     assert grupo(pyproject, "dev") == requisitos("requirements-dev.txt")
 
 
+def test_grupo_docs_e_o_requirements_docs_txt(pyproject):
+    assert grupo(pyproject, "docs") == requisitos("requirements-docs.txt")
+
+
 def test_versoes_exatas_no_pyproject(pyproject):
     # Igual aos requirements: nada de faixas (^, ~, >=), o instalado é o testado.
     for versao in [
         *dependencias_principais(pyproject).values(),
         *grupo(pyproject, "dados").values(),
         *grupo(pyproject, "dev").values(),
+        *grupo(pyproject, "docs").values(),
     ]:
         assert re.fullmatch(r"\d+(\.\d+)*", versao), versao
 
 
-@pytest.mark.parametrize("arquivo", ["requirements.txt", "requirements-dados.txt", "requirements-dev.txt"])
+ARQUIVOS = ["requirements.txt", "requirements-dados.txt", "requirements-dev.txt", "requirements-docs.txt"]
+
+
+@pytest.mark.parametrize("arquivo", ARQUIVOS)
 def test_poetry_lock_trava_as_mesmas_versoes(lock, arquivo):
     for pacote, versao in requisitos(arquivo).items():
         assert lock.get(pacote) == versao, f"{pacote}: requirements={versao}, poetry.lock={lock.get(pacote)}"
@@ -98,13 +107,13 @@ def test_streamlit_e_plotly_ficam_fora_das_dependencias_do_chatbot(pyproject):
 
 
 def test_grupos_opcionais_poetry_install_instala_so_o_chatbot(pyproject):
-    for nome in ("dados", "dev"):
+    for nome in ("dados", "dev", "docs"):
         assert pyproject["tool"]["poetry"]["group"][nome]["optional"] is True
 
 
 def test_poetry_nao_empacota_e_nao_entra_nas_dependencias(pyproject):
     assert pyproject["tool"]["poetry"]["package-mode"] is False
-    todas = {*dependencias_principais(pyproject), *grupo(pyproject, "dados"), *grupo(pyproject, "dev")}
+    todas = {*dependencias_principais(pyproject), *(p for g in ("dados", "dev", "docs") for p in grupo(pyproject, g))}
     assert "poetry" not in todas  # o Poetry é instalado à parte, com o pipx
 
 

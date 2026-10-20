@@ -34,10 +34,14 @@ Thumbs.db
 .idea/
 
 # Dados baixados pelo pipeline (python -m pipeline --cache/--csv)
-dados/
+# (só a pasta da raiz: docs/dados/ é documentação e vai para o Git)
+/dados/
 
 # Relatórios de cobertura dos testes (pytest-cov)
 .coverage
 .coverage.*
 coverage.xml
 htmlcov/
+
+# Site gerado pelo MkDocs (mkdocs build)
+site/

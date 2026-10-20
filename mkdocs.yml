@@ -1,0 +1,116 @@
+# =============================================================
+# Site de documentação (MkDocs + tema Material)
+# =============================================================
+# Ver no computador:   mkdocs serve        → http://127.0.0.1:8000
+# Gerar o site:        mkdocs build --strict   (pasta site/, fora do Git)
+# Instalar:            pip install -r requirements-docs.txt
+#                      (ou: poetry install --with docs)
+#
+# Publicação no GitHub Pages: NÃO está ativada. Veja docs/publicar.md.
+# =============================================================
+
+site_name: Professor de Dados — Documentação
+site_description: >-
+  Chatbot Professor de Dados (Gradio), pipeline do Censo 2022 do IBGE e
+  dashboard Brasil em Dados (Streamlit + Plotly), explicados passo a passo.
+site_author: apristhais-png
+site_url: https://apristhais-png.github.io/meu-primeiro-assistente-ia/
+repo_name: apristhais-png/meu-primeiro-assistente-ia
+repo_url: https://github.com/apristhais-png/meu-primeiro-assistente-ia
+edit_uri: edit/main/docs/
+copyright: Projeto acadêmico de Engenharia de Dados e IA. Dados do IBGE (Censo 2022).
+
+theme:
+  name: material
+  language: pt-BR
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Mudar para o tema escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Mudar para o tema claro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+
+plugins:
+  - search:
+      lang: pt
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+# Links quebrados, âncoras inexistentes e páginas fora do menu viram erro
+# no "mkdocs build --strict" (a CI usa esse modo).
+validation:
+  omitted_files: warn
+  absolute_links: info
+  unrecognized_links: warn
+  anchors: warn
+
+nav:
+  - Início:
+      - index.md
+      - Tecnologias: tecnologias.md
+      - Arquitetura e pastas: arquitetura.md
+  - Ambiente:
+      - ambiente/index.md
+      - pipx, Poetry e pyenv: ambiente/instalacao.md
+      - Windows 11 passo a passo: ambiente/windows.md
+      - Como executar localmente: executar.md
+  - Dados do IBGE:
+      - Funcionamento da API: dados/api.md
+      - Extração (Requests): dados/extracao.md
+      - Validação (Pydantic): dados/validacao.md
+      - Transformação (Pandas) e indicadores: dados/transformacao.md
+      - Dashboard (Streamlit e Plotly): dashboard.md
+  - Professor de Dados: professor-de-dados.md
+  - Qualidade:
+      - Testes (pytest): qualidade/testes.md
+      - Cobertura (pytest-cov): qualidade/cobertura.md
+      - Ruff: qualidade/ruff.md
+      - GitHub Actions: qualidade/ci.md
+  - Segurança: seguranca.md
+  - Publicação: publicar.md
+  - Limitações e próximos passos: limitacoes.md
+  - Histórico:
+      - Auditoria inicial: auditoria.md
