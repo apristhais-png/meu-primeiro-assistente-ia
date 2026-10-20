@@ -1,0 +1,11 @@
+# Aparência e comportamento do dashboard (streamlit run dashboard/app.py).
+# Não afeta o chatbot: o Gradio não lê este arquivo.
+
+[theme]
+primaryColor = "#2a78d6"   # mesmo azul das barras dos gráficos
+
+[client]
+toolbarMode = "viewer"     # esconde o botão "Deploy" e as opções de desenvolvedor
+
+[browser]
+gatherUsageStats = false   # não envia estatísticas de uso ao Streamlit

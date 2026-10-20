@@ -62,6 +62,7 @@ def test_usa_python_311(testar):
         "pytest",
         "-r requirements-dados.txt",
         "--cov=pipeline",
+        "--cov=dashboard",
         "--cov-fail-under=80",
     ],
 )

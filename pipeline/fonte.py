@@ -38,6 +38,9 @@ DENSIDADE = Variavel("614", "densidade_hab_km2", "hab/km²")
 VARIAVEIS = (POPULACAO, AREA, DENSIDADE)
 
 FONTE_CITACAO = "IBGE, Censo Demográfico 2022, tabela 4714 (SIDRA), API de dados agregados v3"
+URL_TABELA = "https://sidra.ibge.gov.br/tabela/4714"
+# Data de referência do Censo 2022: os números descrevem o Brasil neste dia.
+DATA_REFERENCIA = "31/07/2022"
 
 
 def url_da_consulta(localidades: str = f"{NIVEL_MUNICIPIO}[all]") -> str:
