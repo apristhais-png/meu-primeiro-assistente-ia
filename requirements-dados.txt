@@ -11,3 +11,7 @@ pydantic==2.14.0
 
 # Transformação e análise dos dados (mesma versão que o Gradio já instala)
 pandas==3.0.6
+
+# Dashboard (streamlit run dashboard/app.py): tela interativa e gráficos
+streamlit==1.66.0
+plotly==7.1.0

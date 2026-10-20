@@ -61,21 +61,118 @@ Acima da conversa há dois seletores:
   depois que a página é fechada ou a conversa é reiniciada; não há cadastro
   nem banco de dados.
 
-## Pipeline de dados do IBGE (Produto B, em construção)
+## Brasil em Dados — Censo 2022 (Produto B: dashboard)
 
-A pasta `pipeline/` busca dados oficiais do **Censo 2022 do IBGE** (população,
-área e densidade de todos os municípios) e os prepara para análise:
-
-**requests** (busca) → **Pydantic** (confere o formato) → **Pandas** (organiza) → **indicadores**
+Um painel interativo para explorar a **população**, a **área** e a **densidade
+demográfica** de todos os municípios do Brasil, com dados oficiais do IBGE.
+Ele é **independente do chatbot**: roda separado, com outro comando, e o
+Render continua publicando só o Professor de Dados.
 
 ```bash
-pip install -r requirements.txt -r requirements-dados.txt -r requirements-dev.txt
-python -m pipeline --csv dados/municipios.csv   # precisa de internet
+streamlit run dashboard/app.py
 ```
 
-- O pipeline é independente do chatbot: um não importa o outro.
-- O Render continua instalando só o `requirements.txt` (o do chatbot).
-- Plano completo e auditoria: `docs/auditoria.md`.
+### O que a tela mostra
+
+- **Indicadores** da seleção: população total, quantidade de municípios,
+  município mais populoso, população média (e mediana), densidade demográfica
+  agregada (Σ população ÷ Σ área) e participação na população do Brasil.
+  O **?** de cada cartão mostra a definição e a fórmula.
+- **Filtros** (barra lateral, funcionam juntos): região, UF, município,
+  quantidade de municípios no ranking e comparação por região ou por UF.
+  Ao escolher uma região, a lista de UFs e de municípios passa a mostrar só
+  os dela (escolhas que deixam de valer são retiradas sozinhas).
+- **Gráficos Plotly**: ranking dos municípios mais populosos, população por
+  região/UF e densidade por região/UF (com a densidade do Brasil como linha
+  de referência). Todos têm os números também em tabela.
+- **Tabela** com o código IBGE (identificador oficial) de cada município,
+  números no padrão brasileiro e ordenação por coluna.
+- **Download CSV** dos dados filtrados (separador `;` e vírgula decimal, abre
+  direto no Excel em português).
+- **Qualidade dos dados**: municípios recebidos, válidos e descartados,
+  valores ausentes, unidades informadas pela API, conferência da densidade,
+  data de referência e fonte.
+- **Erros e estados vazios**: se o IBGE não responder, aparece uma mensagem
+  simples com o botão **Tentar de novo** (sem detalhes técnicos na tela). Se
+  nenhum município atender aos filtros, a tela avisa em vez de mostrar números.
+
+### Como funciona o cache (por que é rápido)
+
+1. **Na memória** (`st.cache_data`, 24 horas): mexer nos filtros não baixa
+   nada de novo; só refaz contas sobre a tabela já carregada.
+2. **Em disco** (`dados/ibge_4714_2022.json`, fora do Git): o primeiro download
+   (~2 MB) é guardado. Reabrir o dashboard depois usa essa cópia, inclusive
+   sem internet. Se ela estiver corrompida, é baixada de novo sozinha.
+   Para forçar dados novos, apague o arquivo.
+
+Erros **não** ficam no cache: depois de uma falha, a próxima tentativa
+consulta o IBGE de novo.
+
+### Estrutura
+
+```text
+pipeline/          → dados: requests → Pydantic → Pandas → indicadores
+  fonte.py         → URL, tabela 4714, variáveis, UFs e regiões
+  extracao.py      → GET com timeout, tentativas, cópia local
+  validacao.py     → formato da API + relatório de qualidade
+  transformacao.py → DataFrame, filtros, ranking, totais, CSV
+  indicadores.py   → indicadores com definição, fórmula e unidade
+dashboard/         → tela (não repete regras do pipeline)
+  dados.py         → carrega a base, aplica os filtros, prepara as tabelas
+  graficos.py      → gráficos Plotly
+  app.py           → interface Streamlit
+.streamlit/config.toml → cor e opções do Streamlit
+scripts/conferir_dashboard.py → confere a tela com os dados reais (usado na CI)
+```
+
+### Tecnologias
+
+| Biblioteca | Papel |
+|---|---|
+| Requests | Busca os dados na API do IBGE (GET, timeout, novas tentativas). |
+| Pydantic | Confere se a resposta tem o formato esperado. |
+| Pandas | Organiza a tabela, filtra, ordena e soma. |
+| Streamlit | A tela interativa (filtros, cartões, tabela, download, cache). |
+| Plotly | Os gráficos interativos. |
+| pytest + pytest-cov | Testes com API simulada e cobertura mínima de 80%. |
+
+### Instalação e execução no Windows
+
+No **PowerShell**, dentro da pasta do projeto (Python 3.11 instalado):
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements-dados.txt
+streamlit run dashboard/app.py
+```
+
+O navegador abre em http://localhost:8501. Para fechar, aperte `Ctrl+C` no
+PowerShell. Se o PowerShell bloquear o `Activate.ps1`, rode antes
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (ou use o Prompt de
+Comando com `.venv\Scripts\activate.bat`).
+
+No Linux/macOS é igual, trocando a ativação por `source .venv/bin/activate`.
+O dashboard **não precisa de nenhuma chave**: a API do IBGE é pública.
+
+Para rodar também os testes, instale tudo:
+`pip install -r requirements.txt -r requirements-dados.txt -r requirements-dev.txt`.
+
+### Origem dos dados e limitações
+
+- **Fonte:** IBGE, Censo Demográfico 2022, [tabela 4714 do SIDRA](https://sidra.ibge.gov.br/tabela/4714),
+  pela API de dados agregados v3. Data de referência: 31/07/2022.
+- **Um único ano:** o Censo 2022 é uma fotografia. O painel **não** mostra
+  tendências nem evolução no tempo, porque essa fonte não tem série histórica.
+- Só três medidas por município (população, área e densidade). Não há renda,
+  idade, sexo ou outros recortes nesta tabela.
+- A densidade do IBGE vem arredondada; o painel confere se ela bate com
+  população ÷ área (diferença de até 1%).
+- A conferência com a API real roda no GitHub (workflow `api-ibge.yml`), que
+  também guarda fotos da tela como artefato.
+
+O pipeline também roda sozinho, sem tela: `python -m pipeline --csv dados/municipios.csv`.
+Plano e auditoria: `docs/auditoria.md`.
 
 ## Como rodar no seu computador
 

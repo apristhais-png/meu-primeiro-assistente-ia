@@ -69,7 +69,7 @@ jobs:
       - name: Validar o config.yml
         run: python scripts/validar_config.py
 
-      # Os testes do pipeline usam uma API simulada: este job nunca acessa o IBGE.
-      # A cobertura do pipeline precisa ficar em pelo menos 80%.
-      - name: Rodar os testes (pytest) com cobertura do pipeline (pytest-cov)
-        run: pytest -v -rs --cov=pipeline --cov-report=term-missing --cov-fail-under=80
+      # Os testes do pipeline e do dashboard usam uma API simulada: este job
+      # nunca acessa o IBGE. A cobertura dos dois precisa ficar em pelo menos 80%.
+      - name: Rodar os testes (pytest) com cobertura do pipeline e do dashboard (pytest-cov)
+        run: pytest -v -rs --cov=pipeline --cov=dashboard --cov-report=term-missing --cov-fail-under=80

@@ -49,8 +49,8 @@ Legenda: ✅ atendido · 🟡 parcialmente atendido · ❌ não atendido (situa�
 ## Plano de entregas
 
 1. **Auditoria e arquitetura**: este documento.
-2. **Pipeline de dados**: `pipeline/` (requests → Pydantic → Pandas → indicadores), testes e cobertura. *(Este PR.)*
-3. **Dashboard**: `dashboard/` com Streamlit + Plotly, usando o `pipeline/`.
+2. **Pipeline de dados**: `pipeline/` (requests → Pydantic → Pandas → indicadores), testes e cobertura. *(PR #8, integrado.)*
+3. **Dashboard**: `dashboard/` com Streamlit + Plotly, usando o `pipeline/`. *(PR do dashboard.)*
 4. **Ambiente e qualidade**: Poetry (via pipx), pyenv, configuração do Ruff.
 5. **Documentação**: MkDocs Material (+ GitHub Pages, se autorizado).
 6. **Validação final**: checklist completo.
