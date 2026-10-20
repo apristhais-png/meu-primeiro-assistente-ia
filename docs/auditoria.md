@@ -33,7 +33,7 @@ Legenda: ✅ atendido · 🟡 parcialmente atendido · ❌ não atendido (situa�
 | pytest | ✅ | 15 arquivos de teste | Testes do pipeline (**esta entrega**). |
 | pytest-cov | ❌ | — | Cobertura do pipeline na CI, mínimo 80% (**esta entrega**). |
 | Ruff | ✅ (Entrega 4) | `[tool.ruff]` no `pyproject.toml`; `ruff check` e `ruff format --check` na CI | — |
-| MkDocs Material | ❌ | Documentação em `.md` soltos na raiz | Site em `docs/` + `mkdocs.yml` (Entrega 5). |
+| MkDocs Material | ✅ (Entrega 5) | `mkdocs.yml` + `docs/`; workflow `docs.yml` | GitHub Pages só com autorização. |
 | GitHub Actions | ✅ | `ci-deploy.yml` | Ampliado com pipeline e cobertura (**esta entrega**); docs (Entrega 5). |
 
 ## Riscos e como foram evitados
@@ -51,8 +51,8 @@ Legenda: ✅ atendido · 🟡 parcialmente atendido · ❌ não atendido (situa�
 1. **Auditoria e arquitetura**: este documento.
 2. **Pipeline de dados**: `pipeline/` (requests → Pydantic → Pandas → indicadores), testes e cobertura. *(PR #8, integrado.)*
 3. **Dashboard**: `dashboard/` com Streamlit + Plotly, usando o `pipeline/`. *(PR #9, integrado.)*
-4. **Ambiente e qualidade**: Poetry (via pipx), pyenv, configuração do Ruff. *(PR da Entrega 4.)*
-5. **Documentação**: MkDocs Material (+ GitHub Pages, se autorizado).
+4. **Ambiente e qualidade**: Poetry (via pipx), pyenv, configuração do Ruff. *(PR #10, integrado.)*
+5. **Documentação**: MkDocs Material (+ GitHub Pages, se autorizado). *(PR da Entrega 5.)*
 6. **Validação final**: checklist completo.
 
 ## Arquitetura

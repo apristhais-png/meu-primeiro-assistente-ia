@@ -41,3 +41,6 @@ dados/
 .coverage.*
 coverage.xml
 htmlcov/
+
+# Site gerado pelo MkDocs (mkdocs build)
+site/
