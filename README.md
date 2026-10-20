@@ -136,27 +136,17 @@ scripts/conferir_dashboard.py → confere a tela com os dados reais (usado na CI
 | Plotly | Os gráficos interativos. |
 | pytest + pytest-cov | Testes com API simulada e cobertura mínima de 80%. |
 
-### Instalação e execução no Windows
+### Como abrir
 
-No **PowerShell**, dentro da pasta do projeto (Python 3.11 instalado):
+Depois de preparar o ambiente (veja **Ambiente de desenvolvimento no Windows 11**
+mais abaixo):
 
 ```powershell
-py -3.11 -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements-dados.txt
-streamlit run dashboard/app.py
+poetry run streamlit run dashboard/app.py
 ```
 
-O navegador abre em http://localhost:8501. Para fechar, aperte `Ctrl+C` no
-PowerShell. Se o PowerShell bloquear o `Activate.ps1`, rode antes
-`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (ou use o Prompt de
-Comando com `.venv\Scripts\activate.bat`).
-
-No Linux/macOS é igual, trocando a ativação por `source .venv/bin/activate`.
+O navegador abre em http://localhost:8501 (para fechar: `Ctrl+C` no terminal).
 O dashboard **não precisa de nenhuma chave**: a API do IBGE é pública.
-
-Para rodar também os testes, instale tudo:
-`pip install -r requirements.txt -r requirements-dados.txt -r requirements-dev.txt`.
 
 ### Origem dos dados e limitações
 
@@ -174,30 +164,151 @@ Para rodar também os testes, instale tudo:
 O pipeline também roda sozinho, sem tela: `python -m pipeline --csv dados/municipios.csv`.
 Plano e auditoria: `docs/auditoria.md`.
 
-## Como rodar no seu computador
+## Ambiente de desenvolvimento no Windows 11
 
-Na pasta do projeto:
+### Para que serve cada ferramenta
 
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate          # no Windows: .venv\Scripts\activate
-pip install -r requirements.txt -r requirements-dev.txt
+| Ferramenta | Para que serve neste projeto | Onde fica |
+|---|---|---|
+| **Python 3.11** | Versão usada em tudo: no seu computador, na CI e no Render (arquivo `.python-version`). | Seu computador |
+| **pyenv / pyenv-win** | Instala e troca versões do Python sem mexer no Python do sistema. Opcional, mas evita "funciona aqui e não lá". | Seu computador |
+| **pipx** | Instala programas de linha de comando (como o Poetry) cada um na sua caixinha isolada, fora do projeto. | Seu computador |
+| **Poetry** | Cria o ambiente virtual do projeto e instala as versões exatas do `poetry.lock`. **Não** é dependência do app. | Seu computador e CI |
+| **pytest + pytest-cov** | Testes automáticos (com IAs e API do IBGE simuladas) e a medida de cobertura. | Seu computador e CI |
+| **Ruff** | Procura erros comuns e padroniza a formatação do código. Regras no `pyproject.toml`. | Seu computador e CI |
+
+As versões das bibliotecas estão em dois formatos, sempre iguais (um teste confere):
+
+| Arquivo | O que tem | Quem usa |
+|---|---|---|
+| `requirements.txt` | Chatbot (Gradio, OpenAI, Anthropic…) | **Render** (`pip install -r requirements.txt`) e CI |
+| `requirements-dados.txt` | Pipeline e dashboard (Requests, Pandas, Streamlit, Plotly) | CI e quem não usa o Poetry |
+| `requirements-dev.txt` | Testes e qualidade (pytest, pytest-cov, Ruff…) | CI e quem não usa o Poetry |
+| `pyproject.toml` + `poetry.lock` | Os três acima: principais = chatbot, grupo `dados`, grupo `dev` | Poetry (seu computador) |
+
+### Instalação local × publicação no Render
+
+- **No seu computador** você instala tudo (chatbot + dados + testes) com o
+  Poetry, para desenvolver e testar.
+- **No Render** nada disso muda: ele continua rodando
+  `pip install -r requirements.txt` e `python app.py` (veja `render.yaml`).
+  O Poetry, o Streamlit e o Plotly **não** são instalados lá.
+- Para trocar a versão de uma biblioteca, mude o `requirements*.txt` **e** o
+  `pyproject.toml`, rode `poetry lock` e depois `pytest tests/test_poetry.py`.
+
+### Passo a passo (PowerShell)
+
+Abra o **PowerShell** (não precisa ser como administrador).
+
+**1. Python 3.11** — escolha **uma** opção:
+
+- *Com pyenv-win* (recomendado se você usa outras versões do Python):
+
+  ```powershell
+  Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"
+  ```
+
+  Feche e abra o PowerShell de novo. Depois:
+
+  ```powershell
+  pyenv install 3.11.9
+  pyenv global 3.11.9
+  python --version          # deve mostrar Python 3.11.9
+  ```
+
+  (3.11.9 é a última versão 3.11 com instalador oficial para Windows.)
+- *Sem pyenv*: `winget install -e --id Python.Python.3.11` (ou o instalador
+  do [python.org](https://www.python.org/downloads/windows/), marcando
+  "Add python.exe to PATH"). Confira com `py -3.11 --version`.
+
+Se o PowerShell bloquear scripts, rode uma vez:
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+**2. pipx e Poetry** (uma vez por computador):
+
+```powershell
+py -3.11 -m pip install --user pipx
+py -3.11 -m pipx ensurepath
 ```
 
-Para conversar com uma IA de verdade, copie o `.env.example` para `.env` e
-coloque pelo menos uma chave (o `.env` nunca vai para o GitHub). Depois:
+Feche e abra o PowerShell de novo. Depois:
 
-```bash
-python app.py
+```powershell
+pipx install poetry==2.5.1
+poetry --version          # Poetry (version 2.5.1)
 ```
 
-Abra no navegador o endereço mostrado (normalmente http://127.0.0.1:7860).
-Sem nenhuma chave, a tela abre, mas as perguntas recebem uma mensagem amigável
-de erro.
+**3. Dependências do projeto** (na pasta do projeto):
+
+```powershell
+cd caminho\para\meu-primeiro-assistente-ia
+poetry env use 3.11
+poetry install --with dados,dev
+```
+
+Isso cria um ambiente virtual só deste projeto, com as versões exatas do
+`poetry.lock`. Para instalar só o chatbot: `poetry install` (sem `--with`).
+
+**4. Rodar o chatbot (Professor de Dados)**
+
+```powershell
+Copy-Item .env.example .env     # depois coloque pelo menos uma chave no .env
+poetry run python app.py
+```
+
+Abra http://127.0.0.1:7860. Sem nenhuma chave, a tela abre, mas as perguntas
+recebem uma mensagem amigável de erro. O `.env` nunca vai para o GitHub.
 
 > No seu computador, o app escuta só em `127.0.0.1` (não fica visível para
 > outras máquinas da rede). No Render, ele escuta em `0.0.0.0`, na porta da
 > variável `PORT`, como o Render exige.
+
+**5. Rodar o pipeline do IBGE** (precisa de internet; não precisa de chave):
+
+```powershell
+poetry run python -m pipeline --cache dados\ibge_4714_2022.json --csv dados\municipios.csv
+```
+
+**6. Rodar o dashboard**
+
+```powershell
+poetry run streamlit run dashboard/app.py
+```
+
+**7. Testes e cobertura**
+
+```powershell
+poetry run pytest                                            # todos os testes
+poetry run pytest --cov=pipeline --cov=dashboard             # + cobertura (mínimo 80%)
+poetry run pytest --cov=pipeline --cov=dashboard --cov-report=html
+start htmlcov\index.html                                     # relatório no navegador
+```
+
+Os testes não usam internet nem chaves: as IAs e a API do IBGE são simuladas.
+
+**8. Ruff (erros comuns e formatação)**
+
+```powershell
+poetry run ruff check .          # procura problemas
+poetry run ruff format .         # formata o código
+poetry run ruff format --check . # só confere (é o que a CI faz)
+```
+
+### Sem Poetry (alternativa com pip)
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -r requirements-dados.txt -r requirements-dev.txt
+python app.py                         # ou: streamlit run dashboard/app.py
+```
+
+### Linux e macOS
+
+Os mesmos passos, com o [pyenv](https://github.com/pyenv/pyenv)
+(`pyenv install 3.11`: o `.python-version` do projeto já escolhe o 3.11) e
+o pipx do sistema (`python3 -m pip install --user pipx && python3 -m pipx ensurepath`).
+Caminhos usam `/` em vez de `\`.
 
 ## Como publicar (Render)
 
@@ -221,11 +332,16 @@ python scripts/validar_config.py
 ## Como conferir se está tudo certo
 
 ```bash
-pytest                               # testes automáticos (sem chamar IAs reais)
-ruff check .                         # estilo e erros comuns
-python scripts/validar_config.py     # configuração
-python scripts/verificar_segredos.py # chaves de API esquecidas nos arquivos
+pytest --cov=pipeline --cov=dashboard # testes automáticos + cobertura (sem IAs reais nem internet)
+ruff check .                          # estilo e erros comuns
+ruff format --check .                 # formatação
+python scripts/validar_config.py      # configuração
+python scripts/verificar_segredos.py  # chaves de API esquecidas nos arquivos
 ```
+
+Com o Poetry, coloque `poetry run` antes de cada comando. A CI faz tudo isso
+em cada Pull Request (`ci-deploy.yml`); o workflow `ambiente.yml` também
+instala o projeto do zero com o Poetry e simula a instalação do Render.
 
 ## Onde ficam as chaves de API
 
