@@ -80,6 +80,14 @@ API de dados agregados do IBGE (v3): **tabela 4714 do Censo 2022** (população 
 | Identificador dos municípios | Código IBGE de 7 dígitos. |
 | Comparações úteis | Municípios, UFs e regiões, por população, área e densidade. |
 
-**Validação real ainda pendente:** este ambiente de desenvolvimento não alcança o site do IBGE, por isso o formato da resposta foi implementado a partir da documentação. O workflow `api-ibge.yml` roda o pipeline contra a API real no PR. É ele que confirma (ou não) o formato e os números.
+**Validação real (workflow `api-ibge.yml`, no PR #8):** o ambiente de desenvolvimento não alcança o site do IBGE, então o formato foi implementado a partir da documentação e conferido pelo workflow, que roda o pipeline contra a API real no GitHub Actions. Resultado da execução:
+
+| Conferência | Resultado real |
+|---|---|
+| Resposta da API | HTTP 200, cerca de 2 MB, 21 s |
+| Municípios válidos | 5.570 de 5.570 (nenhum descartado) |
+| Unidades | Pessoas · Quilômetros quadrados · Habitante por quilômetro quadrado |
+| Densidade informada × população/área | 0 municípios com diferença acima de 1% |
+| População total | 203.080.756 (maior município: São Paulo, 11.451.999) |
 
 Fontes: [tabela 4714 no SIDRA](https://sidra.ibge.gov.br/tabela/4714) · [documentação da API de agregados](https://servicodados.ibge.gov.br/api/docs/agregados?versao=3).
