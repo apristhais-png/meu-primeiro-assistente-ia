@@ -52,11 +52,12 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             requirements-dev.txt
+            requirements-dados.txt
 
       - name: Instalar as bibliotecas
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -r requirements.txt -r requirements-dev.txt -r requirements-dados.txt
           pip check
 
       - name: Procurar chaves vazadas
@@ -68,5 +69,7 @@ jobs:
       - name: Validar o config.yml
         run: python scripts/validar_config.py
 
-      - name: Rodar os testes (pytest)
-        run: pytest -v -rs
+      # Os testes do pipeline usam uma API simulada: este job nunca acessa o IBGE.
+      # A cobertura do pipeline precisa ficar em pelo menos 80%.
+      - name: Rodar os testes (pytest) com cobertura do pipeline (pytest-cov)
+        run: pytest -v -rs --cov=pipeline --cov-report=term-missing --cov-fail-under=80
