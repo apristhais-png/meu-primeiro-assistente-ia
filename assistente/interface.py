@@ -38,6 +38,7 @@ TAMANHO_DA_FILA = 30
 
 # ---------- Aparência ----------
 
+
 def misturar(cor: str, fundo: str, proporcao: float) -> str:
     """Mistura a cor com o fundo. proporcao=0.15 → 15% da cor e 85% do fundo."""
     cor, fundo = cores.validar_formato(cor), cores.validar_formato(fundo)
@@ -79,9 +80,7 @@ def criar_tema(config: Configuracao) -> gr.themes.Base:
     # As mesmas cores valem no modo escuro do Gradio, para a tela ser igual
     # em qualquer navegador (o contraste foi conferido contra o fundo escolhido).
     tema = gr.themes.Default()
-    valores |= {
-        f"{nome}_dark": valor for nome, valor in valores.items() if hasattr(tema, f"{nome}_dark")
-    }
+    valores |= {f"{nome}_dark": valor for nome, valor in valores.items() if hasattr(tema, f"{nome}_dark")}
     return tema.set(**valores)
 
 
@@ -195,6 +194,7 @@ def html_do_cabecalho(config: Configuracao, raiz: Path = RAIZ_DO_PROJETO) -> str
 
 # ---------- Resposta ----------
 
+
 def criar_funcao_de_resposta(assistente: Assistente):
     """Função chamada pelo Gradio a cada pergunta.
 
@@ -234,10 +234,7 @@ def criar_funcao_de_resposta(assistente: Assistente):
 # ---------- Tela ----------
 
 DICA_DA_CAIXA = "Escreva sua pergunta..."
-AVISO_DO_RODAPE = (
-    "As respostas são geradas por IA e podem conter erros. "
-    "Não compartilhe senhas nem dados pessoais."
-)
+AVISO_DO_RODAPE = "As respostas são geradas por IA e podem conter erros. Não compartilhe senhas nem dados pessoais."
 
 
 def conversa_vazia():
@@ -264,27 +261,35 @@ def depois_de_mudar_a_conversa(conversa: list):
     return gr.update(interactive=True), gr.update(placeholder=DICA_DA_CAIXA)
 
 
-def criar_interface(
-    config: Configuracao, assistente: Assistente, raiz: Path = RAIZ_DO_PROJETO
-) -> gr.Blocks:
+def criar_interface(config: Configuracao, assistente: Assistente, raiz: Path = RAIZ_DO_PROJETO) -> gr.Blocks:
     """Monta a tela do chat. Para abrir: demo.launch(**opcoes_de_lancamento(config))."""
     dados = config.assistente
     with gr.Blocks(title=dados.nome, analytics_enabled=False) as demo:
         with gr.Row(elem_classes="topo"):
             gr.HTML(html_do_cabecalho(config, raiz))
             nova_conversa = gr.Button(
-                "Nova conversa", variant="secondary", size="md",
-                scale=0, min_width=140, elem_id="nova-conversa",
+                "Nova conversa",
+                variant="secondary",
+                size="md",
+                scale=0,
+                min_width=140,
+                elem_id="nova-conversa",
             )
         # Tutor adaptativo: nível e modo vão para as instruções da IA (tutor.py).
         with gr.Row(elem_classes="controles-tutor"):
             nivel = gr.Radio(
-                opcoes_para_tela(NIVEIS), value=NIVEL_PADRAO, label="Seu nível",
-                elem_id="nivel", min_width=0,
+                opcoes_para_tela(NIVEIS),
+                value=NIVEL_PADRAO,
+                label="Seu nível",
+                elem_id="nivel",
+                min_width=0,
             )
             modo = gr.Radio(
-                opcoes_para_tela(MODOS), value=MODO_PADRAO, label="Modo de estudo",
-                elem_id="modo", min_width=0,
+                opcoes_para_tela(MODOS),
+                value=MODO_PADRAO,
+                label="Modo de estudo",
+                elem_id="modo",
+                min_width=0,
             )
         chat = gr.ChatInterface(
             fn=criar_funcao_de_resposta(assistente),
@@ -328,17 +333,22 @@ def criar_interface(
         # "Nova conversa" zera a tela e o histórico da sessão (o histórico
         # que vai para a IA fica em chatbot_state). Não é uma API pública.
         nova_conversa.click(
-            conversa_vazia, None,
+            conversa_vazia,
+            None,
             [chat.chatbot, chat.chatbot_state, chat.chatbot_value, chat.textbox],
-            queue=False, api_visibility="private",
+            queue=False,
+            api_visibility="private",
         )
         # Enquanto a IA responde, o botão fica desligado: uma resposta atrasada
         # não pode trazer de volta a conversa que acabou de ser apagada.
         # (A caixa de texto já fica bloqueada nesse tempo, o que impede
         # perguntas duplicadas.)
         chat.chatbot.change(
-            depois_de_mudar_a_conversa, chat.chatbot, [nova_conversa, chat.textbox],
-            queue=False, api_visibility="private",
+            depois_de_mudar_a_conversa,
+            chat.chatbot,
+            [nova_conversa, chat.textbox],
+            queue=False,
+            api_visibility="private",
         )
     demo.chat_interface = chat  # referência usada pelos testes
     demo.nova_conversa = nova_conversa

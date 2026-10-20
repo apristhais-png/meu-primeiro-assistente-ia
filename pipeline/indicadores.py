@@ -36,32 +36,58 @@ class Indicador:
 DEFINICOES = {
     d.chave: d
     for d in [
-        Definicao("populacao_total", "População total da seleção",
-                  "Soma da população residente dos municípios selecionados.",
-                  "Σ população", "pessoas"),
-        Definicao("municipios", "Municípios analisados",
-                  "Quantidade de municípios na seleção.", "contagem de municípios", "municípios"),
-        Definicao("maior_populacao", "Maior população",
-                  "Município mais populoso da seleção.", "máx(população)", "pessoas"),
-        Definicao("media_populacao", "População média por município",
-                  "Média aritmética da população dos municípios selecionados.",
-                  "Σ população ÷ nº de municípios", "pessoas"),
-        Definicao("mediana_populacao", "População mediana por município",
-                  "Valor do meio: metade dos municípios tem menos e metade tem mais.",
-                  "mediana(população)", "pessoas"),
-        Definicao("densidade_selecao", "Densidade demográfica da seleção",
-                  "População da seleção dividida pela área da seleção "
-                  "(só municípios com área informada).",
-                  "Σ população ÷ Σ área", "hab/km²"),
-        Definicao("participacao_brasil", "Participação na população do Brasil",
-                  "Parte da população do Brasil que mora nos municípios selecionados.",
-                  "Σ população da seleção ÷ Σ população de todos os municípios × 100", "%"),
+        Definicao(
+            "populacao_total",
+            "População total da seleção",
+            "Soma da população residente dos municípios selecionados.",
+            "Σ população",
+            "pessoas",
+        ),
+        Definicao(
+            "municipios",
+            "Municípios analisados",
+            "Quantidade de municípios na seleção.",
+            "contagem de municípios",
+            "municípios",
+        ),
+        Definicao(
+            "maior_populacao", "Maior população", "Município mais populoso da seleção.", "máx(população)", "pessoas"
+        ),
+        Definicao(
+            "media_populacao",
+            "População média por município",
+            "Média aritmética da população dos municípios selecionados.",
+            "Σ população ÷ nº de municípios",
+            "pessoas",
+        ),
+        Definicao(
+            "mediana_populacao",
+            "População mediana por município",
+            "Valor do meio: metade dos municípios tem menos e metade tem mais.",
+            "mediana(população)",
+            "pessoas",
+        ),
+        Definicao(
+            "densidade_selecao",
+            "Densidade demográfica da seleção",
+            "População da seleção dividida pela área da seleção (só municípios com área informada).",
+            "Σ população ÷ Σ área",
+            "hab/km²",
+        ),
+        Definicao(
+            "participacao_brasil",
+            "Participação na população do Brasil",
+            "Parte da população do Brasil que mora nos municípios selecionados.",
+            "Σ população da seleção ÷ Σ população de todos os municípios × 100",
+            "%",
+        ),
     ]
 }
 
 
 def calcular(selecao: pd.DataFrame, todos: pd.DataFrame) -> dict[str, Indicador]:
     """Indicadores da seleção. "todos" é o Brasil inteiro (para a participação)."""
+
     def ind(chave, valor, detalhe=""):
         return Indicador(DEFINICOES[chave], valor, detalhe)
 
@@ -76,7 +102,9 @@ def calcular(selecao: pd.DataFrame, todos: pd.DataFrame) -> dict[str, Indicador]
     return {
         "populacao_total": ind("populacao_total", populacao),
         "municipios": ind("municipios", len(selecao)),
-        "maior_populacao": ind("maior_populacao", int(maior["populacao"]), f"{maior['municipio']} ({maior['uf_sigla']})"),
+        "maior_populacao": ind(
+            "maior_populacao", int(maior["populacao"]), f"{maior['municipio']} ({maior['uf_sigla']})"
+        ),
         "media_populacao": ind("media_populacao", float(selecao["populacao"].mean())),
         "mediana_populacao": ind("mediana_populacao", float(selecao["populacao"].median())),
         "densidade_selecao": ind("densidade_selecao", int(com_area["populacao"].sum()) / area if area > 0 else None),

@@ -12,13 +12,26 @@ import pandas as pd
 from pipeline.validacao import RegistroMunicipio
 
 COLUNAS = [
-    "codigo_ibge", "municipio", "uf_sigla", "uf_nome", "regiao", "ano",
-    "populacao", "area_km2", "densidade_hab_km2",
+    "codigo_ibge",
+    "municipio",
+    "uf_sigla",
+    "uf_nome",
+    "regiao",
+    "ano",
+    "populacao",
+    "area_km2",
+    "densidade_hab_km2",
 ]
 TIPOS = {
-    "codigo_ibge": "string", "municipio": "string", "uf_sigla": "string", "uf_nome": "string",
-    "regiao": "string", "ano": "int64", "populacao": "int64",
-    "area_km2": "float64", "densidade_hab_km2": "float64",
+    "codigo_ibge": "string",
+    "municipio": "string",
+    "uf_sigla": "string",
+    "uf_nome": "string",
+    "regiao": "string",
+    "ano": "int64",
+    "populacao": "int64",
+    "area_km2": "float64",
+    "densidade_hab_km2": "float64",
 }
 
 
@@ -69,12 +82,14 @@ def agregar(df: pd.DataFrame, por: str) -> pd.DataFrame:
         raise ValueError("agregue por 'regiao' ou 'uf_sigla'")
     com_area = df.dropna(subset=["area_km2"])
     grupos = df.groupby(por, observed=True)
-    resultado = pd.DataFrame({
-        "municipios": grupos.size(),
-        "populacao": grupos["populacao"].sum(),
-        "area_km2": com_area.groupby(por, observed=True)["area_km2"].sum(),
-        "_pop_com_area": com_area.groupby(por, observed=True)["populacao"].sum(),
-    })
+    resultado = pd.DataFrame(
+        {
+            "municipios": grupos.size(),
+            "populacao": grupos["populacao"].sum(),
+            "area_km2": com_area.groupby(por, observed=True)["area_km2"].sum(),
+            "_pop_com_area": com_area.groupby(por, observed=True)["populacao"].sum(),
+        }
+    )
     resultado["densidade_hab_km2"] = resultado["_pop_com_area"] / resultado["area_km2"]
     resultado = resultado.drop(columns="_pop_com_area").reset_index()
     return resultado.sort_values("populacao", ascending=False, ignore_index=True)

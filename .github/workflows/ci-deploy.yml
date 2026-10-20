@@ -66,6 +66,10 @@ jobs:
       - name: Verificar estilo (Ruff)
         run: ruff check .
 
+      # As regras do Ruff ficam no pyproject.toml ([tool.ruff]).
+      - name: Verificar a formatação (Ruff)
+        run: ruff format --check .
+
       - name: Validar o config.yml
         run: python scripts/validar_config.py
 

@@ -48,6 +48,7 @@ def nao_encontrado(sdk):
 
 # ---------- OpenRouter (lista pública) ----------
 
+
 def test_openrouter_modelo_gratuito_confirmado():
     r = cm.conferir_openrouter("m:free", lista_openrouter(modelo_or("m:free")))
     assert (r.situacao, r.detalhe) == ("confirmado", "gratuito, conversa em texto")
@@ -72,6 +73,7 @@ def test_openrouter_sem_acesso_fica_pendente():
 
 # ---------- Anthropic e OpenAI (precisam de chave) ----------
 
+
 @pytest.mark.parametrize("provedor", ["anthropic", "openai"])
 def test_sem_chave_fica_pendente_e_nao_consulta(provedor):
     chamadas = []
@@ -95,6 +97,7 @@ def test_erro_na_consulta_fica_pendente_sem_mostrar_a_chave():
 
 
 # ---------- As consultas reais só LEEM (custo zero) ----------
+
 
 class ClienteFalso:
     def __init__(self, erro=None):

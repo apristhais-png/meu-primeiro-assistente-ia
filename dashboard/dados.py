@@ -40,9 +40,7 @@ MENSAGEM_RECUSADA = (
     "O serviço do IBGE não aceitou a consulta. Tente de novo mais tarde; se o "
     "problema continuar, a API pode ter mudado."
 )
-MENSAGEM_FALHA = (
-    "Não foi possível obter os dados do IBGE agora. Tente de novo mais tarde."
-)
+MENSAGEM_FALHA = "Não foi possível obter os dados do IBGE agora. Tente de novo mais tarde."
 MENSAGEM_FORMATO = (
     "Os dados do IBGE chegaram num formato diferente do esperado, por isso o "
     "dashboard não mostra números que poderiam estar errados."
@@ -108,6 +106,7 @@ def carregar_base(cache: Path | None = None) -> Base:
 
 # ---------- Filtros ----------
 
+
 @dataclass(frozen=True)
 class Filtros:
     regioes: tuple[str, ...] = ()
@@ -140,9 +139,7 @@ def opcoes_de_ufs(df: pd.DataFrame, regioes: tuple[str, ...] = ()) -> dict[str, 
     return {s: f"{s} — {nomes[s]}" for s in sorted(siglas)}
 
 
-def opcoes_de_municipios(
-    df: pd.DataFrame, regioes: tuple[str, ...] = (), ufs: tuple[str, ...] = ()
-) -> dict[str, str]:
+def opcoes_de_municipios(df: pd.DataFrame, regioes: tuple[str, ...] = (), ufs: tuple[str, ...] = ()) -> dict[str, str]:
     """Municípios (código IBGE → "Nome (UF)") das regiões/UFs escolhidas, por nome."""
     dados = filtrar(df, regioes=regioes, ufs=ufs).sort_values(["municipio", "uf_sigla"])
     return dict(zip(dados["codigo_ibge"], dados["municipio"] + " (" + dados["uf_sigla"] + ")", strict=True))
@@ -154,6 +151,7 @@ def manter_validos(escolhidos, opcoes) -> list:
 
 
 # ---------- Seleção ----------
+
 
 @dataclass(frozen=True)
 class Selecao:

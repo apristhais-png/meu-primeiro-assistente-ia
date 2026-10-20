@@ -79,6 +79,7 @@ def conversa(*textos):
 # Fluxo completo
 # =============================================================
 
+
 def test_pergunta_vai_para_a_ia_com_historico_e_instrucoes():
     chat, (ia,) = assistente(IAFalsa(resposta="ETL é extrair, transformar e carregar."))
     historico = conversa("Oi!", "Olá! O que você quer aprender?")
@@ -126,6 +127,7 @@ def test_ponta_a_ponta_com_provedor_real_e_cliente_simulado(classe, nome):
 # =============================================================
 # Perguntas bloqueadas não chamam nenhuma IA
 # =============================================================
+
 
 def test_pergunta_longa_nao_chama_ia():
     chat, ias = assistente(IAFalsa("openrouter"), IAFalsa("anthropic"))
@@ -179,9 +181,12 @@ def test_pergunta_vazia_nao_chama_ia_nem_gasta_a_cota(pergunta):
 # Fallback e mensagem amigável
 # =============================================================
 
+
 def test_fallback_do_p6_e_usado():
     falha = FalhaDoProvedor("openrouter", "tempo_esgotado")
-    chat, (primeira, segunda) = assistente(IAFalsa("openrouter", falha=falha), IAFalsa("anthropic", resposta="do Claude"))
+    chat, (primeira, segunda) = assistente(
+        IAFalsa("openrouter", falha=falha), IAFalsa("anthropic", resposta="do Claude")
+    )
     resultado = chat.responder("?")
     assert (resultado.texto, resultado.provedor) == ("do Claude", "anthropic")
     assert len(primeira.chamadas) == len(segunda.chamadas) == 1
@@ -213,6 +218,7 @@ def test_provedor_desligado_no_config_e_ignorado():
 # =============================================================
 # Histórico
 # =============================================================
+
 
 def test_historico_respeita_o_maximo_de_mensagens():
     config = CONFIG.model_copy(update={"geracao": CONFIG.geracao.model_copy(update={"max_mensagens_historico": 4})})
@@ -262,11 +268,16 @@ def test_conteudo_em_partes_e_arquivos_do_gradio():
 
 def test_avisos_do_assistente_e_perguntas_bloqueadas_saem_do_historico():
     historico = conversa(
-        "p1", "r1",
-        "p2", MENSAGENS["pessoa_minuto"],
-        "p3", MENSAGEM_SEM_RESPOSTA,
-        "p4", MENSAGENS["pergunta_longa"].format(tamanho=2000),
-        "p5", "r5",
+        "p1",
+        "r1",
+        "p2",
+        MENSAGENS["pessoa_minuto"],
+        "p3",
+        MENSAGEM_SEM_RESPOSTA,
+        "p4",
+        MENSAGENS["pergunta_longa"].format(tamanho=2000),
+        "p5",
+        "r5",
     )
     assert preparar_historico(historico, 10, 1000) == conversa("p1", "r1", "p5", "r5")
 
@@ -281,6 +292,7 @@ def test_mensagem_gigante_no_historico_e_cortada():
 # =============================================================
 # Conversas de pessoas diferentes não se misturam
 # =============================================================
+
 
 def test_conversas_intercaladas_nao_se_misturam():
     chat, (ia,) = assistente()
@@ -328,17 +340,19 @@ def test_muitas_conversas_ao_mesmo_tempo_nao_se_misturam():
 # Logs sem conteúdo das conversas (RF10)
 # =============================================================
 
+
 def test_logs_nao_mostram_pergunta_resposta_nem_instrucoes(caplog):
     caplog.set_level(logging.DEBUG)
     requisicao = httpx2.Request("POST", "https://exemplo.invalid")
-    falha = openai.APIStatusError(
-        "erro", response=httpx2.Response(503, request=requisicao, json={}), body={}
-    )
+    falha = openai.APIStatusError("erro", response=httpx2.Response(503, request=requisicao, json={}), body={})
     cliente = MagicMock()
     cliente.chat.completions.create.side_effect = falha
-    quebrado = ProvedorCompativelComOpenAI("openrouter", "m", "chave-de-teste-nao-real", CONFIG.geracao, cliente=cliente)
+    quebrado = ProvedorCompativelComOpenAI(
+        "openrouter", "m", "chave-de-teste-nao-real", CONFIG.geracao, cliente=cliente
+    )
     chat = Assistente(
-        CONFIG, provedores=[quebrado, IAFalsa("anthropic", resposta="resposta-secreta-456")],
+        CONFIG,
+        provedores=[quebrado, IAFalsa("anthropic", resposta="resposta-secreta-456")],
         limitador=Limitador(CONFIG.limites),
     )
 
@@ -348,6 +362,13 @@ def test_logs_nao_mostram_pergunta_resposta_nem_instrucoes(caplog):
     texto = caplog.text
     assert "anthropic respondeu" in texto
     assert "Limite atingido (pergunta_longa)" in texto
-    for segredo in ("pergunta-secreta-123", "resposta-secreta-456", "historico-secreto-789",
-                    "pergunta-longa-secreta", CONFIG.instrucoes[:40], "chave-de-teste-nao-real", "8.8.8.8"):
+    for segredo in (
+        "pergunta-secreta-123",
+        "resposta-secreta-456",
+        "historico-secreto-789",
+        "pergunta-longa-secreta",
+        CONFIG.instrucoes[:40],
+        "chave-de-teste-nao-real",
+        "8.8.8.8",
+    ):
         assert segredo not in texto, segredo

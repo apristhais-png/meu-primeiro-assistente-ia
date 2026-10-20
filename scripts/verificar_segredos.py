@@ -122,10 +122,7 @@ def main(raiz: Path = RAIZ_DO_PROJETO) -> int:
 
     print(f"[ERRO] {len(achados)} possível(is) chave(s) encontrada(s):")
     for achado in achados:
-        print(
-            f"  - {achado.arquivo}, linha {achado.linha}: "
-            f"chave {achado.servico} {achado.chave_escondida}"
-        )
+        print(f"  - {achado.arquivo}, linha {achado.linha}: chave {achado.servico} {achado.chave_escondida}")
     print()
     print("O que fazer:")
     print("  1. Se for uma chave REAL: revogue-a agora no site do serviço e crie outra.")

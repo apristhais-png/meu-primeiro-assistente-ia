@@ -1,0 +1,124 @@
+# =============================================================
+# Ambiente Python: Poetry e instalação igual à do Render
+# =============================================================
+# Roda só em Pull Requests que mexem nas dependências ou nas configurações
+# (e quando alguém pede, em "Run workflow"). NÃO roda em push na main, então
+# não participa do "After CI Checks Pass" do Render: o Poetry nunca atrasa
+# nem bloqueia a publicação do chatbot.
+#
+# Dois jobs, cada um num ambiente limpo:
+#   poetry  -> instala o Poetry com o pipx, confere o poetry.lock, instala
+#              tudo (chatbot + dados + dev) e roda Ruff e todos os testes.
+#   render  -> faz exatamente o que o Render faz (pip install -r
+#              requirements.txt), confere que Streamlit/Plotly ficaram de
+#              fora e liga o chatbot para ver se ele responde.
+# Não usa segredos nem chaves de IA e não publica nada.
+# =============================================================
+
+name: Ambiente Python (Poetry e Render)
+
+on:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "requirements*.txt"
+      - ".python-version"
+      - ".github/workflows/ambiente.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  poetry:
+    name: poetry
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GRADIO_ANALYTICS_ENABLED: "False"
+      OPENROUTER_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Instalar Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      # pipx instala o Poetry isolado, fora do ambiente do projeto.
+      - name: Instalar o Poetry com o pipx
+        run: |
+          pipx install poetry==2.5.1
+          poetry --version
+
+      - name: Conferir se o poetry.lock combina com o pyproject.toml
+        run: poetry check --lock
+
+      - name: Instalar as dependências (chatbot + dados + dev)
+        run: |
+          poetry env use python3.11
+          poetry install --with dados,dev --no-interaction
+          poetry run pip check
+
+      - name: Ruff (lint e formatação)
+        run: |
+          poetry run ruff check .
+          poetry run ruff format --check .
+
+      - name: Testes com cobertura (pipeline e dashboard, mínimo 80%)
+        run: poetry run pytest -q -rs --cov=pipeline --cov=dashboard --cov-report=term-missing --cov-fail-under=80
+
+  render:
+    name: render
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GRADIO_ANALYTICS_ENABLED: "False"
+      OPENROUTER_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      OPENAI_API_KEY: ""
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Instalar Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      # O mesmo buildCommand do render.yaml.
+      - name: Instalar como o Render (só o requirements.txt)
+        run: |
+          pip install -r requirements.txt
+          pip check
+
+      - name: Conferir que o dashboard ficou fora do chatbot
+        run: |
+          python - <<'PY'
+          import importlib.util
+          extras = [m for m in ("streamlit", "plotly") if importlib.util.find_spec(m)]
+          assert not extras, f"o Render instalaria bibliotecas do dashboard: {extras}"
+          print("[OK] Streamlit e Plotly não são instalados pelo Render")
+          PY
+
+      - name: Ligar o chatbot e conferir que responde
+        run: |
+          PORT=7860 python app.py > chatbot.log 2>&1 &
+          for tentativa in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://127.0.0.1:7860/; then
+              echo "[OK] chatbot respondeu (HTTP 200)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "[ERRO] o chatbot não respondeu em 60 s"
+          cat chatbot.log
+          exit 1

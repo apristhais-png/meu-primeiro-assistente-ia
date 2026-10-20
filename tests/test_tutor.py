@@ -75,6 +75,7 @@ def assistente(config=CONFIG):
 # Montagem das instruções
 # =============================================================
 
+
 @pytest.mark.parametrize("nivel", list(NIVEIS))
 @pytest.mark.parametrize("modo", list(MODOS))
 def test_instrucoes_juntam_config_nivel_e_modo(nivel, modo):
@@ -97,8 +98,16 @@ def test_niveis_mudam_linguagem_e_dificuldade():
 
 def test_modo_exercicio_pede_tarefa_dica_criterios_sem_solucao_e_correcao():
     texto = MODOS["exercicio"].instrucoes
-    for trecho in ("Python, SQL", "Engenharia de Dados", "dica", "Critérios de verificação",
-                   "NÃO entregue a solução", "tentativa", "corrija", "não repita"):
+    for trecho in (
+        "Python, SQL",
+        "Engenharia de Dados",
+        "dica",
+        "Critérios de verificação",
+        "NÃO entregue a solução",
+        "tentativa",
+        "corrija",
+        "não repita",
+    ):
         assert trecho in texto
 
 
@@ -124,6 +133,7 @@ def test_valor_desconhecido_vira_o_padrao_e_nunca_entra_nas_instrucoes(valor):
 # =============================================================
 # Chat: o nível e o modo chegam à IA
 # =============================================================
+
 
 def test_nivel_e_modo_escolhidos_vao_nas_instrucoes_enviadas_a_ia():
     chat, ia = assistente()
@@ -160,7 +170,9 @@ def test_tentativa_do_aluno_chega_com_o_exercicio_do_historico():
     chat.responder("SELECT mes, SUM(valor) FROM vendas", historico, nivel="iniciante", modo="exercicio")
     enviada = ia.chamadas[0]
     assert [m["content"] for m in enviada["mensagens"]] == [
-        "Quero um exercício de SQL", exercicio, "SELECT mes, SUM(valor) FROM vendas",
+        "Quero um exercício de SQL",
+        exercicio,
+        "SELECT mes, SUM(valor) FROM vendas",
     ]
     assert "corrija" in enviada["instrucoes"]
 
@@ -184,6 +196,7 @@ def test_log_mostra_nivel_e_modo_mas_nao_a_pergunta(caplog):
 # =============================================================
 # Tela e API
 # =============================================================
+
 
 def componentes(demo, tipo):
     return [b for b in demo.blocks.values() if isinstance(b, tipo)]

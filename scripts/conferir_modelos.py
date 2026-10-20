@@ -47,6 +47,7 @@ class Resultado:
 
 # ---------- Consultas (substituídas por simulações nos testes) ----------
 
+
 def baixar_lista_do_openrouter() -> list[dict]:
     with urllib.request.urlopen(LISTA_PUBLICA_DO_OPENROUTER, timeout=30) as resposta:
         return json.load(resposta).get("data", [])
@@ -75,6 +76,7 @@ def existe_na_openai(modelo: str, chave: str) -> bool:
 
 
 # ---------- Conferência ----------
+
 
 def conferir_openrouter(modelo: str, baixar=baixar_lista_do_openrouter) -> Resultado:
     try:
@@ -129,7 +131,10 @@ def conferir(config, ambiente, consultas=None) -> list[Resultado]:
 
 
 SIMBOLOS = {
-    "confirmado": "[OK]      ", "nao_encontrado": "[ERRO]    ", "inadequado": "[ERRO]    ", "pendente": "[PENDENTE]",
+    "confirmado": "[OK]      ",
+    "nao_encontrado": "[ERRO]    ",
+    "inadequado": "[ERRO]    ",
+    "pendente": "[PENDENTE]",
 }
 
 

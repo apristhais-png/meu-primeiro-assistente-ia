@@ -52,6 +52,7 @@ CONFIG_GRAFICOS = {"displaylogo": False, "modeBarButtonsToRemove": ["select2d", 
 
 # ---------- Dados (com cache) ----------
 
+
 @st.cache_data(ttl=timedelta(hours=24), show_spinner="Buscando os dados do IBGE…")
 def carregar() -> dados.Base:
     """Uma busca por dia, no máximo, por processo do Streamlit.
@@ -182,7 +183,7 @@ def cartao(coluna, chave, rotulo, valor, complemento=None):
             delta_color="off",
             delta_arrow="off",
             help=f"{definicao.nome}: {definicao.definicao} Fórmula: {definicao.formula}. "
-                 f"Unidade: {definicao.unidade}. Fonte: {definicao.fonte}.",
+            f"Unidade: {definicao.unidade}. Fonte: {definicao.fonte}.",
             border=True,
             height="stretch",
         )
@@ -191,14 +192,29 @@ def cartao(coluna, chave, rotulo, valor, complemento=None):
 linha1 = st.columns(3)
 cartao(linha1[0], "populacao_total", "População total", f"{formatar(ind['populacao_total'].valor)} pessoas")
 cartao(linha1[1], "municipios", "Municípios", formatar(ind["municipios"].valor))
-cartao(linha1[2], "maior_populacao", "Município mais populoso", ind["maior_populacao"].detalhe,
-       f"{formatar(ind['maior_populacao'].valor)} pessoas")
+cartao(
+    linha1[2],
+    "maior_populacao",
+    "Município mais populoso",
+    ind["maior_populacao"].detalhe,
+    f"{formatar(ind['maior_populacao'].valor)} pessoas",
+)
 linha2 = st.columns(3)
-cartao(linha2[0], "media_populacao", "População média", f"{formatar(round(ind['media_populacao'].valor))} pessoas",
-       f"mediana: {formatar(round(ind['mediana_populacao'].valor))} pessoas")
+cartao(
+    linha2[0],
+    "media_populacao",
+    "População média",
+    f"{formatar(round(ind['media_populacao'].valor))} pessoas",
+    f"mediana: {formatar(round(ind['mediana_populacao'].valor))} pessoas",
+)
 cartao(linha2[1], "densidade_selecao", "Densidade demográfica", f"{formatar(ind['densidade_selecao'].valor)} hab/km²")
-cartao(linha2[2], "participacao_brasil", "Participação no Brasil", f"{formatar(ind['participacao_brasil'].valor)}%",
-       "da população do país")
+cartao(
+    linha2[2],
+    "participacao_brasil",
+    "Participação no Brasil",
+    f"{formatar(ind['participacao_brasil'].valor)}%",
+    "da população do país",
+)
 
 
 # ---------- Gráficos ----------
@@ -265,23 +281,37 @@ detalhes = [
     f"**Fonte oficial:** [{FONTE_CITACAO}]({URL_TABELA}).",
     f"**Data de referência:** {DATA_REFERENCIA} (Censo Demográfico 2022).",
     "**Unidades informadas pela API:** "
-    + "; ".join(f"{dados.NOMES_VARIAVEIS.get(coluna, coluna)} em {unidade}" for coluna, unidade in base.unidades.items()) + ".",
+    + "; ".join(
+        f"{dados.NOMES_VARIAVEIS.get(coluna, coluna)} em {unidade}" for coluna, unidade in base.unidades.items()
+    )
+    + ".",
     f"**Origem desta carga:** {base.origem}, em {base.carregado_em:%d/%m/%Y às %H:%M}.",
 ]
 if relatorio.descartados:
-    detalhes.append("**Motivos de descarte:** " + "; ".join(
-        f"{motivo} ({quantidade})" for motivo, quantidade in sorted(relatorio.descartados.items())) + ".")
+    detalhes.append(
+        "**Motivos de descarte:** "
+        + "; ".join(f"{motivo} ({quantidade})" for motivo, quantidade in sorted(relatorio.descartados.items()))
+        + "."
+    )
 if relatorio.valores_ausentes:
-    detalhes.append("**Valores ausentes:** " + "; ".join(
-        f"{dados.NOMES_VARIAVEIS.get(coluna, coluna)} ({quantidade})"
-        for coluna, quantidade in sorted(relatorio.valores_ausentes.items())) + ".")
+    detalhes.append(
+        "**Valores ausentes:** "
+        + "; ".join(
+            f"{dados.NOMES_VARIAVEIS.get(coluna, coluna)} ({quantidade})"
+            for coluna, quantidade in sorted(relatorio.valores_ausentes.items())
+        )
+        + "."
+    )
 else:
     detalhes.append("**Valores ausentes:** nenhum.")
 if relatorio.duplicados_removidos:
     detalhes.append(f"**Duplicados removidos:** {relatorio.duplicados_removidos}.")
 detalhes.append(
     "**Conferência da densidade** (valor do IBGE × população ÷ área): "
-    + ("todas batem." if base.densidades_inconsistentes == 0
-       else f"{base.densidades_inconsistentes} município(s) com diferença acima de 1%.")
+    + (
+        "todas batem."
+        if base.densidades_inconsistentes == 0
+        else f"{base.densidades_inconsistentes} município(s) com diferença acima de 1%."
+    )
 )
 st.markdown("\n".join(f"- {d}" for d in detalhes))

@@ -54,10 +54,23 @@ PROTEGIDOS = (".gitattributes",)
 
 # Nunca são enviados, mesmo que estejam dentro de uma pasta do app.
 PROIBIDOS = (
-    ".env", ".env.*", "*.env",
-    "*.pem", "*.key", "*.p12", "*.pfx", "id_rsa*", "*secret*",
-    "__pycache__/*", "*.pyc",
-    ".git/*", ".github/*", "tests/*", "scripts/*", ".venv/*", "venv/*",
+    ".env",
+    ".env.*",
+    "*.env",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "id_rsa*",
+    "*secret*",
+    "__pycache__/*",
+    "*.pyc",
+    ".git/*",
+    ".github/*",
+    "tests/*",
+    "scripts/*",
+    ".venv/*",
+    "venv/*",
 )
 
 # Trava contra exclusões em massa (ex.: rodar o script na pasta errada).
@@ -78,6 +91,7 @@ class Plano:
 
 
 # ---------- Regras sobre caminhos ----------
+
 
 def caminho_seguro(caminho: str) -> bool:
     """Recusa caminhos estranhos: absolutos, com "..", com barra invertida etc."""
@@ -109,6 +123,7 @@ def e_protegido(caminho: str) -> bool:
 
 
 # ---------- Arquivos locais ----------
+
 
 def listar_arquivos_do_git(raiz: Path) -> list[str]:
     resultado = subprocess.run(["git", "ls-files", "-z"], cwd=raiz, capture_output=True, check=True)
@@ -162,6 +177,7 @@ def conferir_config(raiz: Path) -> None:
 
 # ---------- Plano ----------
 
+
 def planejar(enviar: list[str], arquivos_do_space: list[str]) -> Plano:
     """Decide o que enviar, o que apagar e o que deixar como está no Space."""
     locais = set(enviar)
@@ -189,6 +205,7 @@ def conferir_plano(plano: Plano) -> None:
 
 
 # ---------- Hugging Face ----------
+
 
 def criar_api(token: str | None):
     from huggingface_hub import HfApi
@@ -225,6 +242,7 @@ def mostrar_plano(plano: Plano) -> None:
 
 
 # ---------- Programa ----------
+
 
 def main(argumentos=None, ambiente=None, api=None, raiz: Path = RAIZ_DO_PROJETO) -> int:
     leitor = argparse.ArgumentParser(description="Publica o app no Hugging Face Spaces.")

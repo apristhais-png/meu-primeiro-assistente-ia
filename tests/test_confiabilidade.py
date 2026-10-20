@@ -70,6 +70,7 @@ def rapido_e_sem_rede(monkeypatch):
 
 # ---------- Ajudantes ----------
 
+
 def resposta_openrouter(texto, fim="stop", modelo="exemplo/modelo-gratis:free", raciocinio=None):
     mensagem = SimpleNamespace(content=texto, reasoning=raciocinio)
     return SimpleNamespace(
@@ -116,14 +117,19 @@ class IALenta:
 
 def com_prazo(provedores, total=5.0, por_tentativa=None, vezes=2):
     return responder_com_fallback(
-        provedores, MENSAGENS, INSTRUCOES,
-        tempo_maximo_total=total, timeout_por_tentativa=por_tentativa, tentativas_por_provedor=vezes,
+        provedores,
+        MENSAGENS,
+        INSTRUCOES,
+        tempo_maximo_total=total,
+        timeout_por_tentativa=por_tentativa,
+        tentativas_por_provedor=vezes,
     )
 
 
 # =============================================================
 # 1. Resposta rápida
 # =============================================================
+
 
 def test_resposta_rapida_usa_uma_unica_chamada_com_prazo_na_biblioteca():
     provedor = openrouter(resposta_openrouter("Olá!"))
@@ -137,6 +143,7 @@ def test_resposta_rapida_usa_uma_unica_chamada_com_prazo_na_biblioteca():
 # =============================================================
 # 2 e 12. Lentidão: tempo esgotado e prazo total respeitado
 # =============================================================
+
 
 def test_resposta_lenta_vira_tempo_esgotado_sem_esperar_o_provedor():
     lenta = IALenta(segundos=3)
@@ -170,7 +177,11 @@ def test_sem_tempo_para_nova_tentativa_nao_repete(monkeypatch):
     monkeypatch.setattr(modulo, "TEMPO_MINIMO_POR_TENTATIVA", 15.0)
     with pytest.raises(SemResposta):
         responder_com_fallback(
-            [provedor], MENSAGENS, INSTRUCOES, tempo_maximo_total=60, tentativas_por_provedor=2,
+            [provedor],
+            MENSAGENS,
+            INSTRUCOES,
+            tempo_maximo_total=60,
+            tentativas_por_provedor=2,
             relogio=lambda: next(instantes),
         )
     assert provedor.criar.call_count == 1  # sobram 10 s, menos que o mínimo de 15 s: não repete
@@ -179,6 +190,7 @@ def test_sem_tempo_para_nova_tentativa_nao_repete(monkeypatch):
 # =============================================================
 # 3. Resposta vazia e resposta incompleta
 # =============================================================
+
 
 def test_resposta_vazia_e_repetida_uma_vez_e_depois_desiste(caplog):
     caplog.set_level(logging.INFO, logger="assistente.provedores")
@@ -215,6 +227,7 @@ def test_resposta_cortada_pelo_tamanho_avisa_a_pessoa():
 # 4. Erro 429: sem nova tentativa
 # =============================================================
 
+
 def test_erro_429_nao_e_repetido_e_mostra_mensagem_propria():
     provedor = openrouter(erro_http(429), resposta_openrouter("não deveria ser chamado"))
     with pytest.raises(SemResposta) as erro:
@@ -226,6 +239,7 @@ def test_erro_429_nao_e_repetido_e_mostra_mensagem_propria():
 # =============================================================
 # 5 e 6. 404, chave e cobrança: param tudo, sem repetir
 # =============================================================
+
 
 @pytest.mark.parametrize(
     ("erro", "tipo"),
@@ -253,9 +267,8 @@ def test_erros_de_configuracao_nao_repetem_nem_fazem_fallback(erro, tipo):
 # 7 e 8. Falha temporária com recuperação; todas as tentativas falham
 # =============================================================
 
-@pytest.mark.parametrize(
-    "falha", [erro_http(503), erro_http(500), openai.APIConnectionError(request=REQUISICAO)]
-)
+
+@pytest.mark.parametrize("falha", [erro_http(503), erro_http(500), openai.APIConnectionError(request=REQUISICAO)])
 def test_falha_temporaria_seguida_de_recuperacao(falha):
     provedor = openrouter(falha, resposta_openrouter("Recuperado"))
     resposta = com_prazo([provedor])
@@ -282,6 +295,7 @@ def test_com_outro_provedor_disponivel_faz_fallback_em_vez_de_repetir():
 # =============================================================
 # 9. Provedores pagos nunca são chamados sem chave
 # =============================================================
+
 
 def test_so_com_a_chave_do_openrouter_nenhum_provedor_pago_e_chamado():
     lista = criar_provedores(CONFIG, {"OPENROUTER_API_KEY": CHAVE_FALSA})
@@ -312,6 +326,7 @@ def test_modelos_do_openrouter_no_config_sao_gratuitos_e_explicitos():
 # =============================================================
 # 10. Histórico depois de sucesso e de falha
 # =============================================================
+
 
 class IAFalsa:
     nome = "openrouter"
@@ -353,6 +368,7 @@ def test_historico_correto_depois_de_sucesso_e_de_falha():
 # 11. Pergunta duplicada da mesma sessão
 # =============================================================
 
+
 class AssistenteLento:
     def __init__(self):
         self.chamadas = 0
@@ -393,6 +409,7 @@ def test_pergunta_duplicada_da_mesma_sessao_e_recusada_sem_chamar_a_ia():
 # Configuração e logs
 # =============================================================
 
+
 def test_tempo_total_menor_que_o_de_uma_tentativa_e_recusado():
     dados = CONFIG.model_dump()
     dados["geracao"] |= {"timeout_segundos": 50, "tempo_maximo_total_segundos": 30}
@@ -428,6 +445,7 @@ def test_logs_tem_tempos_e_resultado_mas_nunca_conteudo_nem_chave(caplog):
 # =============================================================
 # Cancelamento e teto de chamadas simultâneas (revisão do PR #5)
 # =============================================================
+
 
 def esperar_ate(condicao, segundos=5.0):
     limite = time.monotonic() + segundos
@@ -574,6 +592,7 @@ def test_sem_vaga_nao_tenta_outro_provedor(teto):
 
 
 # ---------- Cliente real da biblioteca openai, com um servidor no próprio computador ----------
+
 
 class _ServidorLento(BaseHTTPRequestHandler):
     """Responde 200 e fica 3 s sem terminar: mandando espaços ('ainda processando') ou em silêncio."""

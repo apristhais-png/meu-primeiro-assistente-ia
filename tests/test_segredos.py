@@ -15,6 +15,7 @@ import verificar_segredos as vs
 
 # ---------- Chaves falsas, montadas em tempo de execução ----------
 
+
 def chave_falsa_openrouter() -> str:
     return "sk-or-v1-" + "a1" * 32
 
@@ -46,6 +47,7 @@ def criar_repositorio(pasta: Path, arquivos: dict[str, str]) -> None:
 
 
 # ---------- Detecta chaves no formato completo ----------
+
 
 def test_detecta_chave_de_cada_servico():
     casos = {
@@ -89,6 +91,7 @@ def test_main_falha_quando_ha_chave(tmp_path, capsys):
 
 
 # ---------- Não dá falso alarme ----------
+
 
 def test_prefixos_sozinhos_nao_sao_acusados():
     texto = "Exemplos de prefixos: sk-, sk-ant-, hf_, ghp_ e sk-or-v1-..."
@@ -137,6 +140,7 @@ def test_arquivo_fora_do_git_e_ignorado(tmp_path):
 
 # ---------- O alerta nunca mostra a chave inteira ----------
 
+
 def test_alerta_esconde_a_chave(tmp_path, capsys):
     chave = chave_falsa_anthropic()
     criar_repositorio(tmp_path, {"notas.md": chave + "\n"})
@@ -148,6 +152,7 @@ def test_alerta_esconde_a_chave(tmp_path, capsys):
 
 
 # ---------- O repositório real está limpo ----------
+
 
 def test_repositorio_real_nao_tem_chaves(capsys):
     assert vs.main(RAIZ) == 0

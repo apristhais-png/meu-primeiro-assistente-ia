@@ -29,6 +29,7 @@ def dados_validos():
 
 # ---------- O config.yml real ----------
 
+
 def test_config_real_e_valido():
     config = carregar_configuracao()
     assert config.assistente.nome == "Professor de Dados"
@@ -53,6 +54,7 @@ def test_config_real_nao_tem_chaves_de_api():
 
 # ---------- A logo ----------
 
+
 def test_logo_existe_e_e_um_svg_valido():
     config = carregar_configuracao()
     logo = RAIZ_DO_PROJETO / config.assistente.logo
@@ -61,6 +63,7 @@ def test_logo_existe_e_e_um_svg_valido():
 
 
 # ---------- Mensagens de erro claras ----------
+
 
 def test_arquivo_inexistente(tmp_path):
     with pytest.raises(ErroDeConfiguracao, match="arquivo não encontrado"):
@@ -121,6 +124,7 @@ def test_logo_relativa_a_pasta_do_config(tmp_path, dados_validos):
 # P5: casos de recusa do grupo T1 (SPEC, seções 4.2 e 6)
 # =============================================================
 
+
 def problemas(dados) -> list[str]:
     """Valida os dados e devolve a lista de problemas (vazia se estiver tudo certo)."""
     try:
@@ -140,6 +144,7 @@ def um_problema_em(dados, campo: str) -> str:
 
 # ---------- Assistente ----------
 
+
 @pytest.mark.parametrize("nome", ["", "   ", "A" * 61])
 def test_recusa_nome_vazio_ou_longo_demais(dados_validos, nome):
     dados_validos["assistente"]["nome"] = nome
@@ -157,6 +162,7 @@ def test_recusa_logo_que_nao_existe(dados_validos):
 
 
 # ---------- Aparência ----------
+
 
 @pytest.mark.parametrize("campo", ["cor_primaria", "cor_secundaria"])
 @pytest.mark.parametrize("cor", ["azul", "#12", "2563EB", "#GGGGGG"])
@@ -178,6 +184,7 @@ def test_recusa_cor_que_fica_ilegivel_ao_trocar_o_tema(dados_validos):
 
 # ---------- Instruções ----------
 
+
 @pytest.mark.parametrize("instrucoes", ["", "   \n  "])
 def test_recusa_instrucoes_vazias(dados_validos, instrucoes):
     dados_validos["instrucoes"] = instrucoes
@@ -185,6 +192,7 @@ def test_recusa_instrucoes_vazias(dados_validos, instrucoes):
 
 
 # ---------- Geração ----------
+
 
 @pytest.mark.parametrize(
     ("campo", "valor"),
@@ -211,6 +219,7 @@ def test_aceita_temperatura_nos_extremos(dados_validos, temperatura):
 
 
 # ---------- Limites ----------
+
 
 def test_recusa_configuracao_sem_limites(dados_validos):
     del dados_validos["limites"]
@@ -269,6 +278,7 @@ def test_aceita_limite_por_pessoa_igual_ao_global(dados_validos):
 
 # ---------- Provedores ----------
 
+
 def test_recusa_provedor_desconhecido(dados_validos):
     dados_validos["provedores"][0]["nome"] = "gemini"
     um_problema_em(dados_validos, "provedores[1].nome")
@@ -302,6 +312,7 @@ def test_provedor_desligado_fica_fora_da_lista_de_ativos(dados_validos):
 
 
 # ---------- Campos desconhecidos (erros de digitação) ----------
+
 
 @pytest.mark.parametrize(
     ("onde", "campo_esperado"),

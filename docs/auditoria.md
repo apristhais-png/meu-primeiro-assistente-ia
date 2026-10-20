@@ -21,18 +21,18 @@ Legenda: ✅ atendido · 🟡 parcialmente atendido · ❌ não atendido (situa�
 | Requisito | Situação atual | Evidência no repositório | O que será implementado |
 |---|---|---|---|
 | Python 3.11 | ✅ | `.python-version`, CI e Render em 3.11 | Manter. |
-| pyenv | 🟡 | `.python-version` já existe; nada documentado | Documentar `pyenv` / `pyenv-win` (Entrega 4). |
-| pipx | ❌ | — | Documentar a instalação do Poetry via pipx (Entrega 4). |
-| Poetry | ❌ | `pyproject.toml` só tem configuração do pytest | Grupos de dependências + `poetry.lock`, sem mudar o Render (Entrega 4). |
+| pyenv | ✅ (Entrega 4) | `.python-version` (3.11) + README | `pyenv` / `pyenv-win` documentados. |
+| pipx | ✅ (Entrega 4) | README; CI `ambiente.yml` | Poetry instalado isolado com pipx. |
+| Poetry | ✅ (Entrega 4) | `pyproject.toml` + `poetry.lock`; `tests/test_poetry.py` | Grupos `dados` e `dev`; Render continua no `requirements.txt`. |
 | Requests | ❌ | — | `pipeline/extracao.py` (**esta entrega**). |
 | Pydantic | 🟡 | Usado na configuração do chatbot | Modelos da API do IBGE em `pipeline/validacao.py` (**esta entrega**). |
 | Pandas | ❌ (instalado só como dependência do Gradio) | — | `pipeline/transformacao.py` e `pipeline/indicadores.py` (**esta entrega**). |
-| Streamlit | ❌ | — | `dashboard/` (Entrega 3). |
-| Plotly | ❌ | — | Gráficos do dashboard (Entrega 3). |
+| Streamlit | ✅ (Entrega 3) | `dashboard/app.py` | — |
+| Plotly | ✅ (Entrega 3) | `dashboard/graficos.py` | — |
 | python-dotenv | ✅ | `app.py` lê o `.env` | Manter (o pipeline não precisa de chave). |
 | pytest | ✅ | 15 arquivos de teste | Testes do pipeline (**esta entrega**). |
 | pytest-cov | ❌ | — | Cobertura do pipeline na CI, mínimo 80% (**esta entrega**). |
-| Ruff | 🟡 | `ruff check .` na CI; sem configuração nem formatação | `[tool.ruff]` e `ruff format` (Entrega 4). |
+| Ruff | ✅ (Entrega 4) | `[tool.ruff]` no `pyproject.toml`; `ruff check` e `ruff format --check` na CI | — |
 | MkDocs Material | ❌ | Documentação em `.md` soltos na raiz | Site em `docs/` + `mkdocs.yml` (Entrega 5). |
 | GitHub Actions | ✅ | `ci-deploy.yml` | Ampliado com pipeline e cobertura (**esta entrega**); docs (Entrega 5). |
 
@@ -50,8 +50,8 @@ Legenda: ✅ atendido · 🟡 parcialmente atendido · ❌ não atendido (situa�
 
 1. **Auditoria e arquitetura**: este documento.
 2. **Pipeline de dados**: `pipeline/` (requests → Pydantic → Pandas → indicadores), testes e cobertura. *(PR #8, integrado.)*
-3. **Dashboard**: `dashboard/` com Streamlit + Plotly, usando o `pipeline/`. *(PR do dashboard.)*
-4. **Ambiente e qualidade**: Poetry (via pipx), pyenv, configuração do Ruff.
+3. **Dashboard**: `dashboard/` com Streamlit + Plotly, usando o `pipeline/`. *(PR #9, integrado.)*
+4. **Ambiente e qualidade**: Poetry (via pipx), pyenv, configuração do Ruff. *(PR da Entrega 4.)*
 5. **Documentação**: MkDocs Material (+ GitHub Pages, se autorizado).
 6. **Validação final**: checklist completo.
 

@@ -55,6 +55,7 @@ def sem_rede(monkeypatch):
 
 # ---------- Ajudantes ----------
 
+
 def item_do_catalogo(modelo, prompt="0", completion="0", saidas=("text",), entradas=("text",), nome=None, **outros):
     return {
         "id": modelo,
@@ -74,7 +75,8 @@ CATALOGO_BOM = (item_do_catalogo(PRINCIPAL), item_do_catalogo(RESERVA_1), item_d
 def resposta(texto, modelo=PRINCIPAL, fim="stop"):
     mensagem = SimpleNamespace(content=texto, reasoning=None)
     return SimpleNamespace(
-        model=modelo, usage=SimpleNamespace(completion_tokens=7),
+        model=modelo,
+        usage=SimpleNamespace(completion_tokens=7),
         choices=[SimpleNamespace(message=mensagem, finish_reason=fim)],
     )
 
@@ -83,9 +85,14 @@ def openrouter(*efeitos, catalogo=None, quarentena=None):
     cliente = MagicMock()
     cliente.chat.completions.create.side_effect = list(efeitos)
     provedor = ProvedorOpenRouter(
-        "openrouter", PRINCIPAL, CHAVE_FALSA, CONFIG.geracao, cliente=cliente,
+        "openrouter",
+        PRINCIPAL,
+        CHAVE_FALSA,
+        CONFIG.geracao,
+        cliente=cliente,
         modelos_reserva=[RESERVA_1, RESERVA_2],
-        catalogo=catalogo or catalogo_com(*CATALOGO_BOM), quarentena=quarentena or Quarentena(),
+        catalogo=catalogo or catalogo_com(*CATALOGO_BOM),
+        quarentena=quarentena or Quarentena(),
     )
     provedor.criar = cliente.chat.completions.create
     return provedor
@@ -93,13 +100,19 @@ def openrouter(*efeitos, catalogo=None, quarentena=None):
 
 def com_prazo(provedores, vezes=2):
     return responder_com_fallback(
-        provedores, MENSAGENS, "instruções", tempo_maximo_total=5, timeout_por_tentativa=5, tentativas_por_provedor=vezes,
+        provedores,
+        MENSAGENS,
+        "instruções",
+        tempo_maximo_total=5,
+        timeout_por_tentativa=5,
+        tentativas_por_provedor=vezes,
     )
 
 
 # =============================================================
 # Nomes de modelo (config.yml)
 # =============================================================
+
 
 @pytest.mark.parametrize(
     "modelo",
@@ -162,6 +175,7 @@ def test_config_atual_tem_lista_explicita_de_modelos_gratuitos_de_conversa():
 # Respostas com cara de classificação
 # =============================================================
 
+
 @pytest.mark.parametrize(
     "texto",
     [
@@ -194,6 +208,7 @@ def test_explicacoes_normais_nao_sao_confundidas(texto):
 # =============================================================
 # Catálogo oficial (preço e tipo)
 # =============================================================
+
 
 @pytest.mark.parametrize(
     ("item", "trecho"),
@@ -256,6 +271,7 @@ def test_falha_depois_de_um_sucesso_mantem_o_catalogo_anterior():
 # Provedor OpenRouter
 # =============================================================
 
+
 def test_pedido_usa_o_primeiro_aprovado_a_reserva_e_preco_maximo_zero():
     provedor = openrouter(resposta("Explicação."))
     assert provedor.responder(MENSAGENS, "instruções") == "Explicação."
@@ -303,7 +319,9 @@ def test_duas_respostas_inadequadas_viram_mensagem_amigavel_sem_mostrar_o_rotulo
 
 def test_resposta_vazia_poe_o_modelo_de_quarentena():
     quarentena = Quarentena()
-    provedor = openrouter(resposta("", modelo=PRINCIPAL), resposta("Agora sim.", modelo=RESERVA_1), quarentena=quarentena)
+    provedor = openrouter(
+        resposta("", modelo=PRINCIPAL), resposta("Agora sim.", modelo=RESERVA_1), quarentena=quarentena
+    )
     assert com_prazo([provedor]).texto == "Agora sim."
     assert quarentena.filtrar([PRINCIPAL, RESERVA_1]) == [RESERVA_1]
 
@@ -341,7 +359,9 @@ def test_provedor_recusa_modelos_inadequados_mesmo_fora_do_config():
 
 
 def test_criar_provedores_usa_o_openrouter_seguro_com_a_reserva_do_config():
-    [openrouter_real] = [p for p in criar_provedores(CONFIG, {"OPENROUTER_API_KEY": CHAVE_FALSA}) if p.nome == "openrouter"]
+    [openrouter_real] = [
+        p for p in criar_provedores(CONFIG, {"OPENROUTER_API_KEY": CHAVE_FALSA}) if p.nome == "openrouter"
+    ]
     [item] = [p for p in CONFIG.provedores if p.nome == "openrouter"]
     assert isinstance(openrouter_real, ProvedorOpenRouter)
     assert openrouter_real.modelos == [item.modelo, *item.modelos_reserva]
@@ -350,6 +370,7 @@ def test_criar_provedores_usa_o_openrouter_seguro_com_a_reserva_do_config():
 # =============================================================
 # Todos os modelos de quarentena
 # =============================================================
+
 
 def test_quarentena_com_todos_bloqueados_devolve_lista_vazia_ate_vencer():
     agora = [0.0]
@@ -417,9 +438,11 @@ def test_todos_de_quarentena_pelo_chat_mostra_o_aviso_amigavel():
 # Pela tela/chat: o rótulo nunca chega à pessoa nem ao histórico
 # =============================================================
 
+
 def test_chat_nunca_mostra_o_rotulo_e_o_aviso_fica_fora_do_historico():
     provedor = openrouter(
-        resposta("User Safety: safe", modelo=CLASSIFICADOR), resposta("unsafe", modelo=CLASSIFICADOR),
+        resposta("User Safety: safe", modelo=CLASSIFICADOR),
+        resposta("unsafe", modelo=CLASSIFICADOR),
         resposta("Resposta boa.", modelo=RESERVA_1),
     )
     chat = Assistente(CONFIG, provedores=[provedor], limitador=Limitador(CONFIG.limites))
@@ -443,6 +466,7 @@ def test_aviso_sem_modelo_fica_fora_do_historico():
 # =============================================================
 # scripts/testar_openrouter.py (sem rede: só os casos que não chamam a IA)
 # =============================================================
+
 
 def test_validacao_real_sem_chave_para_sem_chamar_nada(capsys, monkeypatch):
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parent.parent / "scripts"))
