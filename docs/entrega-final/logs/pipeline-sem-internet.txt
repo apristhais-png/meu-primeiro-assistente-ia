@@ -1,0 +1,6 @@
+$ python -m pipeline   (sem internet neste ambiente)
+Fonte: IBGE, Censo Demográfico 2022, tabela 4714 (SIDRA), API de dados agregados v3
+URL: https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/93|6318|614?localidades=N6[all]
+
+[ERRO] não foi possível conectar à API do IBGE (sem internet?)
+saida=1

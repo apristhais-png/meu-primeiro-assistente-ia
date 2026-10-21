@@ -1,0 +1,11 @@
+2026-10-21 14:00:40,495 INFO app: Provedores com chave configurada: nenhum (configure o .env ou a aba Environment do Render)
+2026-10-21 14:00:40,496 INFO app: Abrindo o app em 0.0.0.0:7870
+* Running on local URL:  http://0.0.0.0:7870
+* To create a public link, set `share=True` in `launch()`.
+2026-10-21 14:01:55,443 INFO assistente.chat: pergunta_inicio id=ef976daf nivel=iniciante modo=exercicio
+2026-10-21 14:01:55,443 INFO assistente.limites: Pergunta liberada | pessoa=não identificada | itens_x_forwarded_for=0
+2026-10-21 14:01:55,444 INFO assistente.provedores: Provedor openrouter pulado: chave não configurada.
+2026-10-21 14:01:55,444 INFO assistente.provedores: Provedor anthropic pulado: chave não configurada.
+2026-10-21 14:01:55,444 INFO assistente.provedores: Provedor openai pulado: chave não configurada.
+2026-10-21 14:01:55,444 ERROR assistente.provedores: Nenhum provedor respondeu (openrouter=sem_chave, anthropic=sem_chave, openai=sem_chave).
+2026-10-21 14:01:55,444 INFO assistente.chat: pergunta_fim id=ef976daf resultado=falha:sem_provedor provedor=- total_ms=2

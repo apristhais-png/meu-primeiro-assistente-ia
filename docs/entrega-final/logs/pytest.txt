@@ -1,0 +1,72 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.17, pytest-9.1.1, pluggy-1.7.0
+rootdir: <projeto>
+configfile: pyproject.toml
+testpaths: tests
+plugins: platformdirs-4.13.5, anyio-4.15.1, cov-7.1.0
+collected 690 items
+
+tests/test_chat.py .............................                         [  4%]
+tests/test_conferir_modelos.py ..................                        [  6%]
+tests/test_confiabilidade.py ................................            [ 11%]
+tests/test_config.py ................................................... [ 18%]
+....................                                                     [ 21%]
+tests/test_cores.py ...............................                      [ 26%]
+tests/test_dashboard.py ....................................             [ 31%]
+tests/test_docs.py ..............................                        [ 35%]
+tests/test_interface.py ........................................         [ 41%]
+tests/test_limites.py ....................................               [ 46%]
+tests/test_modelos_gratuitos.py ........................................ [ 52%]
+..............                                                           [ 54%]
+tests/test_pipeline.py ................................................. [ 61%]
+..........................                                               [ 65%]
+tests/test_poetry.py ..............                                      [ 67%]
+tests/test_provedores.py ............................................... [ 74%]
+.....................                                                    [ 77%]
+tests/test_publicar.py ................................................. [ 84%]
+.............                                                            [ 86%]
+tests/test_render.py ...................                                 [ 89%]
+tests/test_segredos.py ............                                      [ 90%]
+tests/test_tutor.py .................................                    [ 95%]
+tests/test_versoes.py ..........                                         [ 97%]
+tests/test_workflow.py ....................                              [100%]
+
+=============================== warnings summary ===============================
+tests/test_interface.py: 26 warnings
+tests/test_tutor.py: 10 warnings
+  /usr/lib/python3.11/contextlib.py:137: Pandas4Warning: 'future.no_silent_downcasting' is deprecated, please refrain from using it.
+    return next(self.gen)
+
+tests/test_interface.py: 13 warnings
+tests/test_tutor.py: 5 warnings
+  <ambiente-de-teste>/venv-pip/lib/python3.11/site-packages/gradio/queueing.py:178: Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 which utilizes a lazy copy mechanism that defers copies until necessary. Use .copy() to make an eager copy if necessary.
+    pd.DataFrame(records).fillna(value=np.nan).infer_objects(copy=False)  # type: ignore
+
+tests/test_interface.py: 13 warnings
+tests/test_tutor.py: 5 warnings
+  /usr/lib/python3.11/contextlib.py:144: Pandas4Warning: 'future.no_silent_downcasting' is deprecated, please refrain from using it.
+    next(self.gen)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.17-final-0 _______________
+
+Name                        Stmts   Miss  Cover   Missing
+---------------------------------------------------------
+dashboard/__init__.py           0      0   100%
+dashboard/app.py               93      4    96%   19, 291, 297, 308
+dashboard/dados.py            124      0   100%
+dashboard/graficos.py          33      0   100%
+pipeline/__init__.py            0      0   100%
+pipeline/__main__.py            3      3     0%   1-5
+pipeline/executar.py           47      1    98%   70
+pipeline/extracao.py           62      0   100%
+pipeline/fonte.py              22      0   100%
+pipeline/indicadores.py        35      0   100%
+pipeline/transformacao.py      34      0   100%
+pipeline/validacao.py         142      2    99%   100, 127
+---------------------------------------------------------
+TOTAL                         595     10    98%
+Coverage HTML written to dir <ambiente-de-teste>/htmlcov
+Required test coverage of 80% reached. Total coverage: 98.32%
+================= 690 passed, 72 warnings in 144.80s (0:02:24) =================

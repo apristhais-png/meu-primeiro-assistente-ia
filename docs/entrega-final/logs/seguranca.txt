@@ -1,0 +1,19 @@
+## 1. .env já foi versionado alguma vez?
+commits que tocaram .env: 0
+## 2. .gitignore protege o .env?
+.gitignore:6:.env	.env
+## 3. Chaves no HISTÓRICO inteiro (mesmos padrões do verificar_segredos.py)
+commits analisados: 52
+possíveis chaves no histórico: 0
+## 4. Workflows
+.github/workflows/ambiente.yml: permissions=contents: read | usa secrets: 0 | persist-credentials:false: 2
+.github/workflows/api-ibge.yml: permissions=contents: read | usa secrets: 0 | persist-credentials:false: 1
+.github/workflows/ci-deploy.yml: permissions=contents: read | usa secrets: 0 | persist-credentials:false: 1
+.github/workflows/docs.yml: permissions=contents: read | usa secrets: 0 | persist-credentials:false: 1
+## 5. Execução de código/arquivos do usuário no chatbot
+nenhum uso de eval/exec/subprocess/upload no chatbot
+## 6. show_error e .env.example
+367:        "show_error": False,  # a pessoa nunca vê detalhes técnicos de erros
+OPENROUTER_API_KEY=SUA_CHAVE_AQUI
+ANTHROPIC_API_KEY=SUA_CHAVE_AQUI
+OPENAI_API_KEY=SUA_CHAVE_AQUI

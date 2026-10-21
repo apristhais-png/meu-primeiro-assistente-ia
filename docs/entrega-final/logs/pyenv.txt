@@ -1,0 +1,11 @@
+$ pyenv --version
+pyenv 2.8.10
+$ pyenv versions
+  system
+* 3.11.17 (set by <projeto>/.python-version)
+$ cat .python-version
+3.11
+$ pyenv version   (na pasta do projeto)
+3.11.17 (set by <projeto>/.python-version)
+$ python --version  (pelo shim do pyenv)
+Python 3.11.17

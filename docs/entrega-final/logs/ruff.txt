@@ -1,0 +1,8 @@
+$ ruff --version
+ruff 0.17.0
+$ ruff check .
+All checks passed!
+saida=0
+$ ruff format --check .
+69 files already formatted
+saida=0

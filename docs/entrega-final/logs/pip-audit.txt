@@ -1,0 +1,11 @@
+Found 8 known vulnerabilities in 1 package
+Name   Version ID              Fix Versions
+------ ------- --------------- ------------
+pillow 12.3.0  CVE-2026-112895 13.0.0
+pillow 12.3.0  CVE-2026-112400 13.0.0
+pillow 12.3.0  CVE-2026-112397 13.0.0
+pillow 12.3.0  CVE-2026-112896 13.0.0
+pillow 12.3.0  CVE-2026-112897 13.0.0
+pillow 12.3.0  CVE-2026-112395 13.0.0
+pillow 12.3.0  CVE-2026-112404 13.0.0
+pillow 12.3.0  CVE-2026-112899 13.0.0

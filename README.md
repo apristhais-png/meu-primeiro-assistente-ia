@@ -353,6 +353,13 @@ instala o projeto do zero com o Poetry e simula a instalação do Render.
 **Nunca** coloque chaves no `config.yml`, no código ou em qualquer arquivo
 enviado ao GitHub.
 
+## Entrega final (validação, checklist e apresentação)
+
+O relatório da validação final, com evidências, resultados dos testes,
+cobertura, checklist dos requisitos, auditoria de segurança e roteiro de
+apresentação, fica em [`docs/entrega-final/`](docs/entrega-final/index.md)
+(também aparece no site da documentação, na aba **Entrega final**).
+
 ## Site de documentação (MkDocs Material)
 
 A documentação completa, em português, fica na pasta `docs/` e vira um site
