@@ -1,0 +1,614 @@
+/* Apresentação do projeto (docs/apresentacao/index.md).
+   Todas as regras ficam dentro de .deck, .painel-notas e .atalhos, para não
+   mudar nada no resto do site. A paleta não depende do tema claro/escuro:
+   os slides são sempre "atlas" (azul profundo) com um único destaque amarelo. */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+
+.deck {
+  --tinta: #0f2236;
+  --tinta-2: #16324f;
+  --linha: #2a4a6b;
+  --agua: #2bb3a3;
+  --ipe: #f2b705;
+  --nevoa: #a9bcd0;
+  --branco: #f5f8fb;
+  --texto: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --numeros: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+
+  position: relative;
+  margin: 0.5rem 0 1rem;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--tinta);
+  color: var(--branco);
+  font-family: var(--texto);
+  outline: none;
+}
+
+.deck:focus-visible {
+  box-shadow: 0 0 0 3px var(--ipe);
+}
+
+/* ---------- Palco: 16:9 no computador, altura livre no celular ---------- */
+
+.deck-palco {
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+
+.deck .slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.5rem, 4.2%, 3.25rem) clamp(1.5rem, 5.5%, 4.5rem);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+  /* Grade de "atlas": linhas finas, como as quadrículas de um mapa. */
+  background-image:
+    linear-gradient(var(--tinta-2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--tinta-2) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+}
+
+.deck .slide.ativo {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease;
+}
+
+.slide-corpo {
+  margin: auto 0;
+  max-width: 72rem;
+}
+
+.deck h2,
+.deck h3 {
+  margin: 0;
+  color: var(--branco);
+  font-family: var(--texto);
+  letter-spacing: -0.01em;
+}
+
+.deck p,
+.deck li,
+.deck dd,
+.deck dt {
+  font-size: clamp(0.85rem, 1.45vw, 1.15rem);
+  line-height: 1.5;
+}
+
+.deck code {
+  background: var(--tinta-2);
+  color: var(--branco);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+  font-size: 0.9em;
+}
+
+.deck .slide-titulo {
+  font-size: clamp(1.4rem, 3.4vw, 2.6rem);
+  font-weight: 600;
+  line-height: 1.15;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+
+.deck .slide-titulo-menor {
+  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.slide-sub {
+  margin: 0.6rem 0 0;
+  color: var(--nevoa);
+  max-width: 60ch;
+}
+
+.slide-duas-colunas {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: clamp(1.25rem, 4%, 3.5rem);
+  align-items: center;
+  width: 100%;
+}
+
+/* ---------- Slide 1: abertura ---------- */
+
+.abertura-projeto {
+  margin: 0;
+  color: var(--agua);
+  font-weight: 500;
+}
+
+.deck .abertura-titulo {
+  margin: 0.4rem 0 0;
+  font-family: var(--numeros);
+  font-size: clamp(2.4rem, 7.2vw, 5.6rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.abertura-produtos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1rem, 3%, 2.5rem);
+  margin-top: clamp(1.25rem, 4%, 2.75rem);
+  max-width: 60rem;
+}
+
+.produto {
+  border-top: 2px solid var(--agua);
+  padding-top: 0.75rem;
+}
+
+.produto-nome {
+  margin: 0;
+  font-weight: 600;
+}
+
+.produto-texto {
+  margin: 0.35rem 0 0;
+  color: var(--nevoa);
+}
+
+/* ---------- Slide 2: arquitetura (dois trilhos) ---------- */
+
+.trilhos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1rem, 3%, 2.5rem);
+  margin-top: clamp(1rem, 3%, 2rem);
+}
+
+.trilho {
+  border-left: 2px solid var(--agua);
+  padding-left: 1.1rem;
+}
+
+.trilho-dados {
+  border-left-color: var(--ipe);
+}
+
+.trilho-nome {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.trilho-etapas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: etapa;
+}
+
+.trilho-etapas li {
+  position: relative;
+  margin: 0 !important;
+  padding: 0.28rem 0 0.28rem 1.6rem;
+  counter-increment: etapa;
+}
+
+/* Numeração: as etapas são uma sequência de verdade (o caminho da pergunta ou do dado). */
+.trilho-etapas li::before {
+  content: counter(etapa);
+  position: absolute;
+  left: 0;
+  top: 0.28rem;
+  font-family: var(--numeros);
+  font-weight: 600;
+  color: var(--nevoa);
+}
+
+.trilho-destino {
+  margin: 0.75rem 0 0;
+  color: var(--nevoa);
+  font-style: italic;
+}
+
+/* ---------- Slide 3: fatos e captura de tela ---------- */
+
+.fatos {
+  margin: clamp(1rem, 3%, 1.75rem) 0 0;
+}
+
+.fatos div {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--linha);
+}
+
+.fatos dt {
+  color: var(--agua);
+  font-weight: 600;
+}
+
+.fatos dd {
+  margin: 0;
+}
+
+.deck .captura {
+  display: block;
+  margin: 0;
+}
+
+.captura img {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--linha);
+  background: #fff;
+}
+
+.deck .captura figcaption,
+.deck .fonte {
+  max-width: none;
+  text-align: left;
+  font-style: normal;
+  margin-top: 0.5rem;
+  color: var(--nevoa);
+  font-size: clamp(0.75rem, 1.1vw, 0.9rem) !important;
+}
+
+/* ---------- Slide 4: o número grande (o único destaque amarelo forte) ---------- */
+
+.numero-gigante {
+  margin: clamp(0.75rem, 2.5%, 1.5rem) 0 0;
+  font-family: var(--numeros);
+  line-height: 0.9 !important;
+}
+
+.numero-valor {
+  font-size: clamp(4.5rem, 15vw, 11.5rem);
+  font-weight: 700;
+  color: var(--ipe);
+  letter-spacing: -0.03em;
+}
+
+.numero-de {
+  font-size: clamp(1.6rem, 4.5vw, 3.4rem);
+  font-weight: 600;
+  color: var(--nevoa);
+}
+
+.numero-legenda {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1rem, 2vw, 1.5rem) !important;
+}
+
+.numeros-apoio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1rem, 4%, 3rem);
+  margin-top: clamp(1rem, 3.5%, 2.25rem);
+}
+
+.numeros-apoio p {
+  margin: 0;
+  color: var(--nevoa);
+}
+
+.numeros-apoio strong {
+  display: block;
+  font-family: var(--numeros);
+  font-size: clamp(1.4rem, 3vw, 2.3rem);
+  font-weight: 600;
+  color: var(--branco);
+}
+
+/* ---------- Slide 5: lista e gráfico de barras ---------- */
+
+.lista {
+  margin: clamp(0.75rem, 2.5%, 1.25rem) 0 0;
+  padding-left: 1.1rem;
+}
+
+.lista li {
+  margin: 0.3rem 0 !important;
+}
+
+.lista li::marker {
+  color: var(--agua);
+}
+
+.destaque-filtro {
+  margin: 1rem 0 0;
+  padding: 0.6rem 0.9rem;
+  border-left: 3px solid var(--ipe);
+  background: var(--tinta-2);
+}
+
+.deck .grafico {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+.deck .grafico figcaption {
+  margin: 0 0 0.75rem;
+  max-width: none;
+  text-align: left;
+  font-style: normal;
+  color: var(--branco);
+  font-weight: 600;
+  font-size: clamp(0.85rem, 1.45vw, 1.15rem);
+}
+
+.barras {
+  --maior: 84840113;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barras li {
+  display: grid;
+  grid-template-columns: 7.5em 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.55rem !important;
+}
+
+.barra-nome {
+  color: var(--nevoa);
+}
+
+.barra {
+  display: block;
+  height: 0.9em;
+  width: calc(var(--valor) / var(--maior) * 100%);
+  border-radius: 0 4px 4px 0;
+  background: var(--agua);
+}
+
+.barra-valor {
+  font-family: var(--numeros);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Slide 6: qualidade ---------- */
+
+.qualidade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1.5rem, 6%, 4.5rem);
+  margin-top: clamp(1rem, 3%, 2rem);
+}
+
+.qualidade-numero p {
+  margin: 0;
+  max-width: 22ch;
+  color: var(--nevoa);
+}
+
+.qualidade-numero .qualidade-valor {
+  font-family: var(--numeros);
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  font-weight: 700;
+  line-height: 1 !important;
+  color: var(--branco);
+  max-width: none;
+}
+
+.ferramentas {
+  margin-top: clamp(1rem, 3.5%, 2.25rem);
+  max-width: 64rem;
+}
+
+.ferramentas p {
+  margin: 0 0 0.45rem;
+}
+
+.ferramentas strong {
+  color: var(--agua);
+}
+
+/* ---------- Slide 7 ---------- */
+
+.enderecos {
+  margin: 1.25rem 0 0;
+  color: var(--nevoa);
+  font-size: clamp(0.75rem, 1.15vw, 0.95rem) !important;
+  word-break: break-word;
+}
+
+/* ---------- Controles ---------- */
+
+.deck-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem clamp(0.75rem, 2%, 1.25rem);
+  background: var(--tinta-2);
+  border-top: 1px solid var(--linha);
+}
+
+.controles-espaco {
+  flex: 1;
+}
+
+.deck .botao {
+  font: 500 0.85rem/1 var(--texto);
+  color: var(--branco);
+  background: var(--tinta);
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+.deck .botao:hover {
+  border-color: var(--nevoa);
+}
+
+.deck .botao:focus-visible {
+  outline: 3px solid var(--ipe);
+  outline-offset: 2px;
+}
+
+.deck .botao:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.deck .botao[aria-pressed="true"] {
+  background: var(--agua);
+  border-color: var(--agua);
+  color: var(--tinta);
+}
+
+.deck .botao-discreto {
+  background: transparent;
+}
+
+.contador {
+  margin: 0 0.35rem !important;
+  min-width: 4.5em;
+  text-align: center;
+  font: 600 0.9rem/1 var(--numeros) !important;
+  color: var(--nevoa);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-progresso {
+  height: 3px;
+  background: var(--tinta);
+}
+
+.deck-progresso span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--ipe);
+  transition: width 0.35s ease;
+}
+
+/* ---------- Tela cheia ---------- */
+
+.deck:fullscreen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 0;
+}
+
+.deck:fullscreen .deck-palco {
+  width: min(100vw, calc((100vh - 3.6rem) * 16 / 9));
+  margin: 0 auto;
+}
+
+.deck:fullscreen .slide-corpo {
+  max-width: none;
+}
+
+/* ---------- Notas ---------- */
+
+.painel-notas {
+  margin: 0 0 1rem;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid #2bb3a3;
+  background: var(--md-code-bg-color);
+  border-radius: 0 8px 8px 0;
+}
+
+.painel-notas h2 {
+  margin: 0 0 0.5rem !important;
+  font-size: 1rem !important;
+}
+
+.atalhos {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.75rem !important;
+}
+
+/* ---------- Celular e janelas estreitas ---------- */
+
+@media (max-width: 760px) {
+  /* Só o slide atual aparece, com a altura do próprio conteúdo. */
+  .deck-palco {
+    aspect-ratio: auto;
+  }
+
+  .deck .slide {
+    position: relative;
+    display: none;
+    min-height: 26rem;
+  }
+
+  .deck .slide.ativo {
+    display: flex;
+  }
+
+  .slide-duas-colunas,
+  .abertura-produtos,
+  .trilhos {
+    grid-template-columns: 1fr;
+  }
+
+  .fatos div {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .numero-de {
+    display: block;
+    margin-top: 0.3rem;
+  }
+
+  .deck p,
+  .deck li,
+  .deck dd,
+  .deck dt {
+    font-size: 0.95rem;
+  }
+
+  .controles-espaco {
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  #janela-notas {
+    display: none;
+  }
+}
+
+/* ---------- Menos movimento ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .deck .slide,
+  .deck .slide.ativo,
+  .deck-progresso span {
+    transition: none;
+  }
+}
+
+/* ---------- Impressão: um slide por página ---------- */
+
+@media print {
+  .deck-controles,
+  .deck-progresso,
+  .atalhos {
+    display: none;
+  }
+
+  .deck .slide {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    break-after: page;
+    aspect-ratio: 16 / 9;
+  }
+
+  .deck-palco {
+    aspect-ratio: auto;
+  }
+}

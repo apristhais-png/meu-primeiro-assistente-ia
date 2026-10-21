@@ -206,3 +206,37 @@ def test_entrega_final_tem_relatorio_roteiro_e_evidencias():
         assert (pasta / pagina).is_file(), pagina
     assert list((pasta / "logs").glob("*.txt")), "faltam os logs de evidência"
     assert list((pasta / "img").glob("*.png")), "faltam as fotos de evidência"
+
+
+# ---------- Apresentação (docs/apresentacao/) ----------
+
+APRESENTACAO = DOCS / "apresentacao"
+
+
+def test_apresentacao_esta_no_menu_principal(mkdocs):
+    assert {"Apresentação": "apresentacao/index.md"} in mkdocs["nav"]
+
+
+def test_apresentacao_tem_7_slides_com_notas():
+    texto = (APRESENTACAO / "index.md").read_text(encoding="utf-8")
+    slides = texto.split('<section class="slide')[1:]
+    assert len(slides) == 7
+    for numero, slide in enumerate(slides, start=1):
+        assert f"Slide {numero} de 7" in slide
+        assert '<aside class="notas" hidden>' in slide, f"slide {numero} sem notas"
+
+
+def test_apresentacao_usa_so_arquivos_do_proprio_site():
+    texto = (APRESENTACAO / "index.md").read_text(encoding="utf-8")
+    assert '<script src="apresentacao.js" defer></script>' in texto
+    assert '<link rel="stylesheet" href="apresentacao.css">' in texto
+    assert (APRESENTACAO / "apresentacao.js").is_file() and (APRESENTACAO / "apresentacao.css").is_file()
+    assert '<script src="http' not in texto  # nenhum script de fora do site
+    # A imagem usada é uma evidência já documentada na entrega final.
+    assert (DOCS / "entrega-final" / "img" / "chatbot-computador.png").is_file()
+
+
+def test_apresentacao_tem_navegacao_por_teclado_e_notas():
+    js = (APRESENTACAO / "apresentacao.js").read_text(encoding="utf-8")
+    for trecho in ("ArrowRight", "ArrowLeft", "requestFullscreen", "#slide-", "notas-apresentacao"):
+        assert trecho in js, trecho
