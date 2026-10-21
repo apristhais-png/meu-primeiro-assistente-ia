@@ -62,6 +62,10 @@ def rapido_e_sem_rede(monkeypatch):
         return conectar_original(sock, endereco)
 
     monkeypatch.setattr(socket.socket, "connect", so_local)
+    # Um proxy local (127.0.0.1) passaria pelo bloqueio acima e levaria o
+    # pedido para a internet: sem as variáveis de proxy, isso não acontece.
+    for variavel in ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"):
+        monkeypatch.delenv(variavel, raising=False)
     monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
     monkeypatch.setenv("no_proxy", "127.0.0.1,localhost")
     monkeypatch.setattr(modulo, "ESPERA_ANTES_DE_REPETIR", 0.05)

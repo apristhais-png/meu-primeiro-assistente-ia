@@ -52,7 +52,16 @@ a pessoa recebeu a mensagem amigável.
 | Limites: 20/min, 500/dia, 2.000 caracteres | Mantido (`validar_config.py`) |
 | Nenhum serviço pago contratado; GitHub Pages não ativado | Confirmado |
 
-## 5. Vulnerabilidades conhecidas nas dependências (`pip-audit`)
+## 5. Testes sem acesso à internet
+
+Durante a validação, um "espião" de conexões rodou junto com os 690 testes.
+
+| Achado | O que foi feito |
+|---|---|
+| 1 tentativa de conexão ao `openrouter.ai` em `test_confiabilidade.py` (catálogo de modelos) | O teste já bloqueava conexões externas, mas um **proxy local** (`127.0.0.1`, como o deste ambiente) passava pelo bloqueio. **Corrigido**: o teste agora remove as variáveis de proxy. Depois da correção: 0 conexões. No GitHub (sem proxy) o bloqueio já funcionava. Nenhuma pergunta foi enviada a uma IA: era só a leitura do catálogo público, e ela foi recusada. |
+| Tentativas de conexão ao `huggingface.co` nos testes da tela Gradio (`test_interface.py`, `test_tutor.py`) | Feitas pela própria biblioteca Gradio ao abrir o servidor de teste; não envolvem IA, chave nem custo. Os testes passam com a internet bloqueada (como neste ambiente), então **não dependem** dela. |
+
+## 6. Vulnerabilidades conhecidas nas dependências (`pip-audit`)
 
 ```text
 Found 8 known vulnerabilities in 1 package

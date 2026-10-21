@@ -58,7 +58,7 @@ limitações).
 
 | Verificação | Resultado |
 |---|---|
-| Testes automáticos | **690 passaram**, 0 falharam, 0 pulados (pip e Poetry) |
+| Testes automáticos | **690 passaram**, 0 falharam, 0 pulados (pip e Poetry, na `main`); **692** neste PR, com os 2 testes novos da entrega final |
 | Cobertura do pipeline + dashboard (mínimo 80%) | **98,32%** |
 | Cobertura do projeto inteiro (informativa) | 92% |
 | Ruff (`check` e `format --check`) | Sem problemas (69 arquivos) |
@@ -90,6 +90,7 @@ limitações).
 |---|---|
 | `GUIA-publicacao.md` ainda citava o roteador `openrouter/free`, trocado no PR #6 | **Corrigido** neste PR: o guia mostra a lista atual de modelos gratuitos |
 | `pip-audit`: 8 vulnerabilidades conhecidas no **Pillow 12.3.0** (dependência indireta do Gradio e do Streamlit), corrigidas no Pillow 13 | **Sem correção compatível hoje**: as versões mais recentes do Gradio (6.30.0) e do Streamlit (1.66.0) exigem `pillow<13`. Todas tratam de abrir **arquivos de imagem** maliciosos; nenhum dos produtos aceita imagens das pessoas. Risco registrado, com ação de acompanhamento (ver [auditoria](auditoria-seguranca.md)) |
+| Um teste de confiabilidade podia sair para a internet por um proxy local (`127.0.0.1`), passando pelo bloqueio de rede | **Corrigido** neste PR (só no teste): ele remove as variáveis de proxy; 0 conexões depois da correção |
 | PR #3 (diagnóstico antigo do "Port scan timeout", só documentação) continua aberto | Decisão da dona do projeto: integrar ou fechar |
 
 ## 5. Limitações (o que não foi validado)
