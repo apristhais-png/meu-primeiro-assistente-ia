@@ -377,6 +377,9 @@ poetry run mkdocs build --strict  # gera a pasta site/ e falha se houver link qu
 - Configuração: `mkdocs.yml`. As páginas são arquivos Markdown em `docs/`.
 - **Site publicado (GitHub Pages):**
   <https://apristhais-png.github.io/meu-primeiro-assistente-ia/>
+- **Apresentação (7 slides, com notas):**
+  <https://apristhais-png.github.io/meu-primeiro-assistente-ia/apresentacao/>
+  (setas trocam de slide, `N` mostra as notas, `F` liga a tela cheia).
 - Em todo Pull Request que mexe na documentação, o workflow `docs.yml` roda
   `mkdocs build --strict` (só confere, não publica).
 - Depois do merge na `main`, o mesmo workflow constrói o site em modo estrito,

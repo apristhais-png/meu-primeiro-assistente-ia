@@ -49,6 +49,7 @@ produtos que vivem no mesmo repositório, mas funcionam de forma independente:
 | Rodar os testes e ver a cobertura | [Testes](qualidade/testes.md) e [Cobertura](qualidade/cobertura.md) |
 | Saber como as chaves e os custos são protegidos | [Segurança](seguranca.md) |
 | Publicar ou atualizar o que está no ar | [Publicação](publicar.md) |
+| Apresentar o projeto (7 slides, com notas) | [Apresentação](apresentacao/index.md) |
 | Ver o relatório final, o checklist e o roteiro de apresentação | [Entrega final](entrega-final/index.md) |
 
 !!! info "Sobre os dados"
