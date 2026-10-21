@@ -1,0 +1,7 @@
+$ pip install -r requirements.txt   (buildCommand do render.yaml)
+
+saida=0
+$ pip check
+No broken requirements found.
+$ bibliotecas do dashboard/docs presentes?
+{'gradio': True, 'streamlit': False, 'plotly': False, 'mkdocs': False, 'pytest': False}

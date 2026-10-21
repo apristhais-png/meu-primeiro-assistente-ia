@@ -1,0 +1,63 @@
+........................................................................ [ 10%]
+........................................................................ [ 20%]
+........................................................................ [ 31%]
+........................................................................ [ 41%]
+........................................................................ [ 52%]
+........................................................................ [ 62%]
+........................................................................ [ 73%]
+........................................................................ [ 83%]
+........................................................................ [ 93%]
+..........................................                               [100%]
+=============================== warnings summary ===============================
+tests/test_interface.py: 26 warnings
+tests/test_tutor.py: 10 warnings
+  /usr/lib/python3.11/contextlib.py:137: Pandas4Warning: 'future.no_silent_downcasting' is deprecated, please refrain from using it.
+    return next(self.gen)
+
+tests/test_interface.py: 13 warnings
+tests/test_tutor.py: 5 warnings
+  <ambiente-de-teste>/venv-pip/lib/python3.11/site-packages/gradio/queueing.py:178: Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 which utilizes a lazy copy mechanism that defers copies until necessary. Use .copy() to make an eager copy if necessary.
+    pd.DataFrame(records).fillna(value=np.nan).infer_objects(copy=False)  # type: ignore
+
+tests/test_interface.py: 13 warnings
+tests/test_tutor.py: 5 warnings
+  /usr/lib/python3.11/contextlib.py:144: Pandas4Warning: 'future.no_silent_downcasting' is deprecated, please refrain from using it.
+    next(self.gen)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.17-final-0 _______________
+
+Name                              Stmts   Miss  Cover   Missing
+---------------------------------------------------------------
+assistente/__init__.py                0      0   100%
+assistente/chat.py                   85      0   100%
+assistente/config.py                194      7    96%   68, 215, 217, 221, 223, 225, 228
+assistente/cores.py                  61      2    97%   84, 121
+assistente/interface.py             126      0   100%
+assistente/limites.py               118      0   100%
+assistente/modelos_gratuitos.py     106      4    96%   94-95, 102, 113
+assistente/provedores.py            367     12    97%   208-209, 295, 327, 330, 384, 594, 607-609, 626-627
+assistente/tutor.py                  19      0   100%
+dashboard/__init__.py                 0      0   100%
+dashboard/app.py                     93      4    96%   19, 291, 297, 308
+dashboard/dados.py                  124      0   100%
+dashboard/graficos.py                33      0   100%
+pipeline/__init__.py                  0      0   100%
+pipeline/__main__.py                  3      3     0%   1-5
+pipeline/executar.py                 47      1    98%   70
+pipeline/extracao.py                 62      0   100%
+pipeline/fonte.py                    22      0   100%
+pipeline/indicadores.py              35      0   100%
+pipeline/transformacao.py            34      0   100%
+pipeline/validacao.py               142      2    99%   100, 127
+scripts/conferir_dashboard.py        73     73     0%   15-118
+scripts/conferir_modelos.py          98      9    91%   52-53, 143-146, 149-151, 167
+scripts/publicar.py                 154      6    96%   140, 147, 164, 211-213, 305
+scripts/testar_openrouter.py         41     23    44%   37-40, 45-66, 70
+scripts/validar_config.py            25     25     0%   13-55
+scripts/verificar_segredos.py        69      2    97%   107, 135
+---------------------------------------------------------------
+TOTAL                              2131    173    92%
+Required test coverage of 80.0% reached. Total coverage: 91.88%
+690 passed, 72 warnings in 121.82s (0:02:01)

@@ -112,5 +112,12 @@ nav:
   - Segurança: seguranca.md
   - Publicação: publicar.md
   - Limitações e próximos passos: limitacoes.md
+  - Entrega final:
+      - entrega-final/index.md
+      - Checklist dos requisitos: entrega-final/checklist.md
+      - Testes e cobertura: entrega-final/testes-e-cobertura.md
+      - Auditoria de segurança: entrega-final/auditoria-seguranca.md
+      - Evidências: entrega-final/evidencias.md
+      - Roteiro de apresentação: entrega-final/roteiro-apresentacao.md
   - Histórico:
       - Auditoria inicial: auditoria.md

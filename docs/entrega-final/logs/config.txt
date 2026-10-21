@@ -1,0 +1,6 @@
+[OK] config.yml está correto.
+  Assistente: Professor de Dados
+  Tema: claro | cores #2563EB e #047857
+  Provedores ativos, em ordem: openrouter (google/gemma-4-31b-it:free), anthropic (claude-haiku-5-5), openai (gpt-4o-mini)
+  Limites globais: 20/minuto e 500/dia | identificação por IP desligada
+saida=0

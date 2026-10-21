@@ -1,0 +1,35 @@
+No broken requirements found.
+INFO pipeline.extracao: ibge_get status=200 duracao_ms=3140 tamanho=2084216
+Fonte: IBGE, Censo Demográfico 2022, tabela 4714 (SIDRA), API de dados agregados v3
+URL: https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/93|6318|614?localidades=N6[all]
+[OK] Qualidade: 5570 de 5570 municípios válidos
+[OK] Unidades informadas pela API: {'populacao': 'Pessoas', 'area_km2': 'Quilômetros quadrados', 'densidade_hab_km2': 'Habitante por quilômetro quadrado'}
+[OK] Densidades que não batem com população ÷ área: 0
+Indicadores (Brasil):
+  População total da seleção: 203.080.756 pessoas
+  Municípios analisados: 5.570 municípios
+  Maior população: 11.451.999 pessoas — São Paulo (SP)
+  População média por município: 36.459,74 pessoas
+  População mediana por município: 11.065 pessoas
+  Densidade demográfica da seleção: 23,90 hab/km²
+  Participação na população do Brasil: 100 %
+População por região:
+  Sudeste: 84.840.113 pessoas em 1668 municípios
+  Nordeste: 54.658.515 pessoas em 1794 municípios
+  Sul: 29.937.706 pessoas em 1191 municípios
+  Norte: 17.354.884 pessoas em 450 municípios
+  Centro-Oeste: 16.289.538 pessoas em 467 municípios
+CSV salvo em dados/municipios.csv
+  URL: http://127.0.0.1:46735
+[OK] Brasil em Dados — Censo 2022
+  População total: 203.080.756 pessoas
+  Municípios: 5.570
+  População média: 36.460 pessoas (mediana: 11.065 pessoas)
+  Densidade demográfica: 23,90 hab/km²
+  Participação no Brasil: 100% (da população do país)
+  Municípios recebidos da API: 5.570
+[OK] gráficos: 3; botões de download: 1
+[OK] filtro Sudeste + SP: 645 municípios, 44.411.238 pessoas
+[OK] foto computador: largura da página 1280px (tela de 1280px)
+[OK] foto celular: largura da página 390px (tela de 390px)
+Artifact download URL: https://github.com/apristhais-png/meu-primeiro-assistente-ia/actions/runs/39612187252/artifacts/12350622715

@@ -1,0 +1,15 @@
+anthropic==1.13.0
+gradio==6.30.0
+mkdocs==1.6.1
+mkdocs-material==9.7.7
+openai==3.28.0
+pandas==3.0.6
+plotly==7.1.0
+pydantic==2.14.0
+pytest==9.1.1
+pytest-cov==7.1.0
+python-dotenv==1.2.4
+PyYAML==6.0.3
+requests==2.34.2
+ruff==0.17.0
+streamlit==1.66.0

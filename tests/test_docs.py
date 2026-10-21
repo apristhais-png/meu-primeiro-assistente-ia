@@ -127,3 +127,46 @@ def test_workflow_constroi_em_modo_estrito(workflow):
     comandos = "\n".join(passo.get("run", "") for passo in workflow["jobs"]["docs"]["steps"])
     assert "pip install -r requirements-docs.txt" in comandos
     assert "mkdocs build --strict" in comandos
+
+
+# ---------- Entrega final ----------
+
+FERRAMENTAS_DA_AULA = [
+    "Python 3.11",
+    "pyenv",
+    "pipx",
+    "Poetry",
+    "Requests",
+    "Pydantic",
+    "Pandas",
+    "Streamlit",
+    "Plotly",
+    "python-dotenv",
+    "pytest",
+    "pytest-cov",
+    "Ruff",
+    "MkDocs Material",
+    "GitHub Actions",
+    "GitHub",
+]
+
+
+def test_checklist_final_cobre_todas_as_ferramentas_da_aula():
+    texto = (DOCS / "entrega-final" / "checklist.md").read_text(encoding="utf-8")
+    faltando = [f for f in FERRAMENTAS_DA_AULA if f"| **{f}** |" not in texto]
+    assert faltando == []
+
+
+def test_entrega_final_tem_relatorio_roteiro_e_evidencias():
+    pasta = DOCS / "entrega-final"
+    for pagina in (
+        "index.md",
+        "checklist.md",
+        "testes-e-cobertura.md",
+        "auditoria-seguranca.md",
+        "evidencias.md",
+        "roteiro-apresentacao.md",
+    ):
+        assert (pasta / pagina).is_file(), pagina
+    assert list((pasta / "logs").glob("*.txt")), "faltam os logs de evidência"
+    assert list((pasta / "img").glob("*.png")), "faltam as fotos de evidência"

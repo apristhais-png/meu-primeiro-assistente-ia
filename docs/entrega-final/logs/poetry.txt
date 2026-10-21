@@ -1,0 +1,26 @@
+$ pipx --version
+1.18.4
+$ pipx install poetry==2.5.1
+done! ✨ 🌟 ✨
+$ poetry --version
+Poetry (version 2.5.1)
+$ poetry check --lock
+All set!
+$ poetry env use 3.11
+Using virtualenv: <ambiente-de-teste>/poetry-venvs/professor-de-dados-_FB1X5fh-py3.11
+$ poetry install --with dados,dev,docs
+Package operations: 98 installs, 0 updates, 0 removals
+saida=0
+$ poetry run python --version
+Python 3.11.17
+$ poetry run pip check
+No broken requirements found.
+$ poetry run pytest -q --cov=pipeline --cov=dashboard --cov-fail-under=80
+TOTAL                         595     10    98%
+Required test coverage of 80% reached. Total coverage: 98.32%
+690 passed, 72 warnings in 149.80s (0:02:29)
+$ poetry run ruff check . && poetry run ruff format --check .
+All checks passed!
+69 files already formatted
+$ poetry run mkdocs build --strict
+INFO    -  Documentation built in 0.93 seconds

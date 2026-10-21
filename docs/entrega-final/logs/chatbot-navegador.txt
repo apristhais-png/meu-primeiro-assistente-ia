@@ -1,0 +1,3 @@
+computador | título: Professor de Dados | largura: 1280
+celular | título: Professor de Dados | largura: 390
+mensagens na conversa: ['O que é um pipeline de dados?', 'O que é um pipeline de dados?', 'Desculpe, não consegui responder agora. Tente novamente em alguns minutos.', 'Desculpe, não consegui responder agora. Tente novamente em alguns minutos.']

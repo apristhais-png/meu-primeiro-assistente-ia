@@ -26,6 +26,12 @@
 
 ### Ambiente e publicação
 
+- A auditoria final (`pip-audit`) encontrou vulnerabilidades conhecidas no
+  **Pillow 12.3.0**, instalado indiretamente pelo Gradio e pelo Streamlit. A
+  correção (Pillow 13) ainda não é aceita por essas bibliotecas. O risco é
+  baixo, porque nenhum dos produtos abre imagens enviadas por pessoas (veja a
+  [auditoria de segurança](entrega-final/auditoria-seguranca.md)).
+
 - Os comandos de **Windows** seguem a documentação oficial das ferramentas,
   mas a instalação completa foi conferida em Linux (computador de
   desenvolvimento e GitHub Actions).

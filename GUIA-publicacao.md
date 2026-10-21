@@ -20,7 +20,7 @@ Render é você, seguindo os passos abaixo.
 | Provedor | Modelo no `config.yml` | Situação | Fonte |
 |---|---|---|---|
 | Anthropic | `claude-haiku-5-5` | ✅ **Confirmado** na documentação oficial. Aposentadoria prevista para não antes de 07/10/2027. | [platform.claude.com — Models overview](https://platform.claude.com/docs/en/about-claude/models/overview) |
-| OpenRouter | `openrouter/free` | ✅ **Trocado no P16 (12/10/2026).** O modelo anterior, `meta-llama/llama-3.3-70b-instruct:free`, deu **erro 404** ("modelo não encontrado") no Render. O `openrouter/free` é o roteador gratuito do OpenRouter: ele escolhe sozinho um modelo grátis disponível, então não depende de um modelo específico continuar no ar. | [openrouter.ai — openrouter/free](https://openrouter.ai/openrouter/free) |
+| OpenRouter | `google/gemma-4-31b-it:free` + reservas `nvidia/nemotron-3-super-120b-a12b:free` e `google/gemma-4-26b-a4b-it:free` | ✅ **Lista explícita de modelos gratuitos de conversa (PR #6).** Primeiro foi trocado o `meta-llama/llama-3.3-70b-instruct:free` (erro 404 no Render, P16) pelo roteador `openrouter/free`; depois ele também foi substituído, porque sorteava classificadores de segurança (veja a seção 9). Antes de cada uso, o app confere no catálogo se o modelo existe e custa zero. | [openrouter.ai — models](https://openrouter.ai/models) |
 | OpenAI | `gpt-4o-mini` | ⏳ **Pendente.** O site da OpenAI não abre no ambiente de desenvolvimento. Resultados de busca indicam que variantes do `gpt-4o-mini` (áudio, realtime, busca) têm datas de desligamento, mas **não** confirmam a situação do modelo base. | [OpenAI — Deprecations](https://developers.openai.com/api/docs/deprecations) |
 
 ### Como confirmar os pendentes, sem custo
@@ -34,7 +34,7 @@ Ele só **consulta a lista de modelos** de cada provedor; nenhuma pergunta é
 enviada à IA, então **nada é cobrado**. Exemplo de saída:
 
 ```
-[OK]       openrouter: openrouter/free (gratuito)
+[OK]       openrouter: google/gemma-4-31b-it:free (gratuito)
 [OK]       anthropic: claude-haiku-5-5
 [PENDENTE] openai: gpt-4o-mini (sem OPENAI_API_KEY configurada)
 ```
@@ -196,9 +196,9 @@ São dois problemas diferentes:
 - **App "dormindo" (cold start):** no Render grátis, o serviço dorme após 15
   minutos sem acesso, e o primeiro acesso depois disso demora cerca de 1 minuto
   para **abrir a página**. Isso não depende da IA e só some num plano pago.
-- **Demora da IA:** com a página já aberta, o `openrouter/free` escolhe um modelo
-  gratuito diferente a cada pergunta. Alguns demoram, outros devolvem resposta
-  vazia. Os limites da conta gratuita do OpenRouter são **20 pedidos por minuto e
+- **Demora da IA:** com a página já aberta, os modelos gratuitos podem demorar
+  ou devolver resposta vazia; nesse caso o app tenta o modelo reserva seguinte
+  (seção 9). Os limites da conta gratuita do OpenRouter são **20 pedidos por minuto e
   50 por dia** (1000 por dia depois de comprar pelo menos 10 créditos). Passou
   disso, ele responde 429.
 

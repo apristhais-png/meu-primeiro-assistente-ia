@@ -1,0 +1,2 @@
+[OK] Nenhuma chave encontrada em 92 arquivos.
+saida=0
