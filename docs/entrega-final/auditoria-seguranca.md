@@ -28,6 +28,12 @@ Executada em 21/10/2026 sobre a `main` (`7c76658`). Logs:
 Nenhum workflow publica nada. Os que rodam testes ou ligam o chatbot deixam as
 chaves de IA vazias.
 
+!!! note "Atualização posterior a esta auditoria"
+    Depois da entrega final, foi autorizada a publicação desta documentação no
+    GitHub Pages: o `docs.yml` ganhou o job `publicar`, com `pages: write` e
+    `id-token: write` só nele, apenas a partir da `main` e sem segredos (veja
+    [Publicação](../publicar.md)).
+
 ## 3. Código do chatbot
 
 | Verificação | Resultado |

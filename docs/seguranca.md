@@ -73,7 +73,10 @@ provedor (veja o
 
 ## GitHub Actions
 
-Todos os workflows têm permissão **só de leitura**, não recebem nenhum
-segredo e fazem o checkout sem guardar credenciais. Os jobs que rodam os
+Os workflows **não recebem nenhum segredo** e fazem o checkout sem guardar
+credenciais. Todos só leem o repositório, com uma exceção: o job `publicar`
+do `docs.yml` tem `pages: write` e `id-token: write` para publicar a
+documentação no GitHub Pages, só a partir da `main` e sem chave manual (token
+automático do Actions). Os jobs que rodam os
 testes ou ligam o chatbot ainda deixam as chaves de IA explicitamente
 **vazias**.

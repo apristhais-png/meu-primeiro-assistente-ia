@@ -1,14 +1,28 @@
 # =============================================================
-# Documentação: constrói o site MkDocs em modo estrito
+# Documentação: constrói o site MkDocs e publica no GitHub Pages
 # =============================================================
-# Roda só em Pull Requests que mexem na documentação (e quando alguém pede,
-# em "Run workflow"). NÃO roda em push na main, então não participa do
-# "After CI Checks Pass" do Render e nunca atrasa a publicação do chatbot.
+# Dois jobs:
+#   docs     → instala o MkDocs e roda "mkdocs build --strict" (qualquer aviso
+#              deixa o job vermelho). Roda em todo Pull Request que mexe na
+#              documentação e também antes de cada publicação.
+#   publicar → só na branch main (push ou "Run workflow" na main), depois que
+#              o "docs" passa: envia o site ao GitHub Pages e confere se o
+#              endereço público abre.
 #
-# NÃO publica no GitHub Pages: isso depende de autorização da dona do
-# repositório (veja docs/publicar.md). O site gerado fica só como artefato
-# desta execução (aba Actions → Summary → Artifacts), por 7 dias.
-# Não usa segredos.
+# Endereço: https://apristhais-png.github.io/meu-primeiro-assistente-ia/
+# (o mesmo "site_url" do mkdocs.yml).
+#
+# Segurança:
+#   - Sem segredos nem tokens manuais: o GitHub Pages usa o token automático
+#     do Actions (OIDC), liberado só para o job "publicar".
+#   - "pages: write" e "id-token: write" existem SÓ no job "publicar"; o job
+#     "docs" só lê o repositório.
+#   - Ambiente "github-pages": só a main publica (o GitHub também restringe
+#     esse ambiente à branch padrão).
+#   - Uma publicação por vez ("concurrency"), sem cancelar a que já começou.
+#
+# Não mexe no chatbot: não instala o requirements.txt, não usa as chaves de IA
+# e não substitui o "CI e publicação" (ci-deploy.yml).
 # =============================================================
 
 name: Documentação (MkDocs)
@@ -20,8 +34,16 @@ on:
       - "mkdocs.yml"
       - "requirements-docs.txt"
       - ".github/workflows/docs.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
+# Padrão de todos os jobs: só leitura. O job "publicar" declara as suas.
 permissions:
   contents: read
 
@@ -50,13 +72,69 @@ jobs:
           pip check
 
       # --strict: qualquer aviso (link quebrado, âncora inexistente, página
-      # fora do menu) deixa o job vermelho.
+      # fora do menu) deixa o job vermelho e nada é publicado.
       - name: Construir o site (mkdocs build --strict)
         run: mkdocs build --strict
 
-      - name: Guardar o site gerado
+      - name: Guardar o site gerado (para baixar e conferir)
         uses: actions/upload-artifact@v4
         with:
           name: site-documentacao
           path: site/
           retention-days: 7
+
+      # Pacote no formato do GitHub Pages: só quando vai publicar.
+      - name: Preparar o site para o GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/
+
+  publicar:
+    name: publicar
+    needs: docs
+    # Só a main publica; Pull Requests e outras branches nunca chegam aqui.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write # publicar no GitHub Pages
+      id-token: write # provar ao GitHub Pages que o pedido vem deste workflow
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - name: Conferir a configuração do GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Publicar no GitHub Pages
+        id: publicacao
+        uses: actions/deploy-pages@v4
+
+      # O endereço público precisa abrir de verdade, com as páginas principais.
+      - name: Conferir o acesso público ao site
+        env:
+          ENDERECO: ${{ steps.publicacao.outputs.page_url }}
+        run: |
+          paginas="./ dados/api/ dados/transformacao/ dashboard/ professor-de-dados/ qualidade/testes/ entrega-final/"
+          for tentativa in $(seq 1 30); do
+            falhas=0
+            for pagina in $paginas; do
+              codigo=$(curl -s -o /dev/null -w "%{http_code}" "${ENDERECO}${pagina}")
+              [ "$codigo" = "200" ] || falhas=$((falhas + 1))
+            done
+            if [ "$falhas" = "0" ]; then
+              for pagina in $paginas; do
+                titulo=$(curl -fsS "${ENDERECO}${pagina}" | grep -o "<title>[^<]*</title>")
+                echo "[OK] HTTP 200 ${ENDERECO}${pagina} ${titulo}"
+              done
+              exit 0
+            fi
+            echo "Ainda não disponível (${falhas} página(s) sem resposta 200); tentando de novo em 10 s..."
+            sleep 10
+          done
+          echo "[ERRO] O site não abriu publicamente em 5 minutos: ${ENDERECO}"
+          exit 1

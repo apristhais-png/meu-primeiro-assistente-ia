@@ -110,17 +110,53 @@ def workflow() -> dict:
     return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
 
 
-def test_workflow_roda_so_em_pull_request_e_manual(workflow):
-    # Chave "on" vira True no YAML 1.1.
-    gatilhos = workflow[True]
-    assert set(gatilhos) == {"pull_request", "workflow_dispatch"}  # nunca em push na main (não afeta o Render)
+def test_workflow_verifica_pull_requests_e_publica_so_da_main(workflow):
+    gatilhos = workflow[True]  # a chave "on" vira True no YAML 1.1
+    assert set(gatilhos) == {"pull_request", "push", "workflow_dispatch"}
+    assert gatilhos["push"]["branches"] == ["main"]
+    # Push na main só dispara o workflow quando a documentação muda.
+    assert gatilhos["push"]["paths"] == gatilhos["pull_request"]["paths"]
+    assert "docs/**" in gatilhos["push"]["paths"]
 
 
-def test_workflow_so_le_e_nao_publica_no_github_pages(workflow):
+def test_so_o_job_publicar_tem_permissao_de_escrita(workflow):
     assert workflow["permissions"] == {"contents": "read"}
+    jobs = workflow["jobs"]
+    assert "permissions" not in jobs["docs"]  # herda o "só leitura"
+    assert jobs["publicar"]["permissions"] == {"pages": "write", "id-token": "write"}
+
+
+def test_publicar_so_na_main_depois_do_build_estrito(workflow):
+    publicar = workflow["jobs"]["publicar"]
+    assert publicar["needs"] == "docs"
+    assert publicar["if"] == "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'"
+    assert publicar["environment"]["name"] == "github-pages"
+    assert publicar["concurrency"] == {"group": "github-pages", "cancel-in-progress": False}
+    [pacote] = [p for p in workflow["jobs"]["docs"]["steps"] if "upload-pages-artifact" in p.get("uses", "")]
+    assert pacote["if"] == publicar["if"]
+
+
+def test_usa_as_acoes_oficiais_do_github_pages_com_versao_fixa(workflow):
+    usadas = [p["uses"] for job in workflow["jobs"].values() for p in job["steps"] if "uses" in p]
+    for acao in ("actions/configure-pages@v", "actions/upload-pages-artifact@v", "actions/deploy-pages@v"):
+        assert any(u.startswith(acao) for u in usadas), acao
+    assert all("@" in u and not u.endswith(("@main", "@master")) for u in usadas)
+
+
+def test_workflow_nao_usa_segredos_nem_dependencias_do_chatbot(workflow):
     texto = WORKFLOW.read_text(encoding="utf-8")
-    for proibido in ("deploy-pages", "pages: write", "id-token", "gh-deploy", "secrets."):
-        assert proibido not in texto
+    for proibido in ("secrets.", "gh-deploy", "requirements.txt ", "-r requirements.txt", "_API_KEY", "render"):
+        assert proibido not in texto.replace("requirements-docs.txt", ""), proibido
+
+
+def test_publicacao_confere_o_acesso_publico(workflow):
+    [passo] = [p for p in workflow["jobs"]["publicar"]["steps"] if p.get("name") == "Conferir o acesso público ao site"]
+    for pagina in ("dados/api/", "dashboard/", "professor-de-dados/", "qualidade/testes/", "entrega-final/"):
+        assert pagina in passo["run"]
+
+
+def test_site_url_e_o_endereco_do_github_pages(mkdocs):
+    assert mkdocs["site_url"] == "https://apristhais-png.github.io/meu-primeiro-assistente-ia/"
 
 
 def test_workflow_constroi_em_modo_estrito(workflow):
