@@ -42,27 +42,49 @@ flowchart LR
     documentação ou do dashboard) faz uma nova publicação do chatbot, com o
     mesmo código. Isso não muda nada para quem usa.
 
-## Esta documentação (GitHub Pages) — não ativada
+## Esta documentação (GitHub Pages)
 
-O site é **gerado e conferido** em todo Pull Request que mexe na documentação
-(workflow `docs.yml`, artefato `site-documentacao`), mas **não é publicado**.
-A publicação no GitHub Pages é gratuita para repositórios públicos e depende
-de uma autorização da dona do projeto, porque exige uma configuração no
-repositório.
+Endereço: **<https://apristhais-png.github.io/meu-primeiro-assistente-ia/>**
+(o mesmo `site_url` do `mkdocs.yml`). A publicação é gratuita e automática,
+pelo workflow `docs.yml`:
 
-Quando for autorizado, os passos são:
+```mermaid
+flowchart LR
+    PR[PR que mexe em docs/] --> B1[job docs:<br/>mkdocs build --strict]
+    B1 --> X[só confere,<br/>não publica]
+    M[merge na main] --> B2[job docs:<br/>mkdocs build --strict]
+    B2 -- passou --> P[job publicar:<br/>GitHub Pages]
+    P --> C[confere o<br/>endereço público]
+    B2 -- falhou --> N[nada é publicado]
+```
 
-1. No GitHub: **Settings → Pages → Build and deployment → Source: GitHub
-   Actions** (ação da dona do repositório).
-2. Acrescentar ao workflow da documentação um job de publicação, que roda só
-   em push na `main`, com as permissões `pages: write` e `id-token: write`,
-   usando as ações oficiais `actions/upload-pages-artifact` e
-   `actions/deploy-pages`.
-3. O endereço será `https://apristhais-png.github.io/meu-primeiro-assistente-ia/`
-   (já configurado como `site_url` no `mkdocs.yml`).
+| Regra | Como é garantida |
+|---|---|
+| Publicar só a partir da `main` | O job `publicar` só roda em push (ou *Run workflow*) na `main`; o ambiente `github-pages` também só aceita a branch padrão |
+| Nada quebrado vai para o ar | `publicar` depende do job `docs`, que roda `mkdocs build --strict` |
+| Permissões mínimas | O job `docs` só lê o repositório; `pages: write` e `id-token: write` existem só no job `publicar` |
+| Sem chaves manuais | O GitHub Pages usa o token automático do Actions (OIDC); nenhum segredo no repositório |
+| Uma publicação por vez | `concurrency: github-pages`, sem cancelar uma publicação em andamento |
+| O site abriu de verdade | Depois de publicar, o job abre o endereço público e confere as páginas principais (início, API, transformação, dashboard, Professor de Dados, testes e entrega final) |
 
-Até lá, dá para ver o site no computador (`mkdocs serve`) ou baixar o
-artefato da CI e abrir o `index.html`.
+Ações oficiais usadas: `actions/configure-pages`, `actions/upload-pages-artifact`
+e `actions/deploy-pages`.
+
+### Configuração única (dona do repositório)
+
+Antes da primeira publicação: **Settings → Pages → Build and deployment →
+Source: GitHub Actions**. O token automático do Actions não tem permissão
+para ligar o GitHub Pages sozinho; sem esse passo, o job `publicar` falha
+(com a mensagem de que o Pages não está ativado) e nada vai para o ar.
+
+### Relação com o chatbot
+
+- O workflow da documentação só instala o `requirements-docs.txt`; não usa
+  o `requirements.txt`, as chaves de IA nem o `render.yaml`.
+- Ele roda na `main` **só quando a documentação muda**. Nesses merges, o
+  Render espera também este workflow terminar antes de republicar o chatbot
+  (opção *After CI Checks Pass*); se a documentação falhar, o chatbot continua
+  no ar com a versão anterior, que tem o mesmo código.
 
 ## Dashboard — ainda não publicado
 

@@ -41,19 +41,19 @@
 - A documentação usa o **MkDocs 1.6** com o tema Material, fixados nessa
   versão. O MkDocs 2.0 anunciou mudanças incompatíveis (plugins e temas), então
   uma atualização futura precisará ser avaliada antes.
-- O **dashboard** e esta **documentação** ainda não estão publicados na
-  internet (dependem de autorização).
+- O **dashboard** ainda não está publicado na internet (depende de
+  autorização). Esta documentação é publicada no GitHub Pages a partir da
+  `main` (veja [Publicação](publicar.md)).
 - Qualquer merge na `main` faz o Render republicar o chatbot, mesmo quando só
   a documentação mudou.
 
 ## Próximos passos possíveis
 
 1. Decidir se e onde publicar o **dashboard** (veja [Publicação](publicar.md)).
-2. Autorizar a publicação desta documentação no **GitHub Pages**.
-3. Acrescentar outra tabela do IBGE (por exemplo, uma série histórica de
+2. Acrescentar outra tabela do IBGE (por exemplo, uma série histórica de
    estimativas de população) para permitir comparações no tempo.
-4. Ligar os limites por pessoa no chatbot depois do teste com o Render
+3. Ligar os limites por pessoa no chatbot depois do teste com o Render
    (critério CA24 do guia).
-5. Fazer a **validação final** do projeto (Entrega 6): testes completos,
+4. Fazer a **validação final** do projeto (Entrega 6): testes completos,
    cobertura, dependências, segurança, compatibilidade com o Render e o
    checklist acadêmico.

@@ -375,10 +375,15 @@ poetry run mkdocs build --strict  # gera a pasta site/ e falha se houver link qu
 ```
 
 - Configuração: `mkdocs.yml`. As páginas são arquivos Markdown em `docs/`.
+- **Site publicado (GitHub Pages):**
+  <https://apristhais-png.github.io/meu-primeiro-assistente-ia/>
 - Em todo Pull Request que mexe na documentação, o workflow `docs.yml` roda
-  `mkdocs build --strict` e guarda o site gerado como artefato (7 dias).
-- **GitHub Pages ainda não está ativado**: depende de autorização. Os passos
-  estão em `docs/publicar.md`.
+  `mkdocs build --strict` (só confere, não publica).
+- Depois do merge na `main`, o mesmo workflow constrói o site em modo estrito,
+  publica no GitHub Pages e confere se o endereço público abre. Só a `main`
+  publica; não há chaves nem tokens manuais. Detalhes em `docs/publicar.md`.
+- Configuração única (dona do repositório): **Settings → Pages → Source:
+  GitHub Actions**.
 - O MkDocs não é instalado no Render e não muda nada no chatbot.
 
 ## Documentação do projeto
